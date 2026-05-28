@@ -74,15 +74,23 @@ export const App: React.FC = () => {
   }, [])
 
   // Animation loop — drives the renderer.
+  // We cap the render rate at ~33 FPS (30ms). The mandala is meditative so
+  // higher frame rates add no perceptible benefit but cost a lot — especially
+  // in Chrome where the canvas is rendered at full devicePixelRatio. This
+  // also leaves headroom for the bloom + tonemap passes on slower machines.
   useEffect(() => {
+    const FRAME_MS = 30
+    let lastRender = 0
     const tick = (now: number) => {
+      rafRef.current = requestAnimationFrame(tick)
+      if (now - lastRender < FRAME_MS) return
+      lastRender = now
       const t = (now - startTimeRef.current) / 1000
       const renderer = rendererRef.current
       const engine = engineRef.current
       if (renderer && engine) {
         renderer.step(engine, stateRef.current, t)
       }
-      rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => {
