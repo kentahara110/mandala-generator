@@ -167,7 +167,13 @@ export class FlameEngine extends BaseEngine {
       }
       const ax = pick.a * x + pick.b * y + pick.c
       const ay = pick.d * x + pick.e * y + pick.f
-      const [vx, vy] = applyVariation(pick.v, ax, ay)
+      let [vx, vy] = applyVariation(pick.v, ax, ay)
+      // Variations like spherical / horseshoe can blow up near origin.
+      // Gently reset if the state escapes the unit-ish disc.
+      if (!isFinite(vx) || !isFinite(vy) || Math.abs(vx) > 50 || Math.abs(vy) > 50) {
+        vx = this.rng.range(-0.5, 0.5)
+        vy = this.rng.range(-0.5, 0.5)
+      }
       x = vx; y = vy
       hue = (hue + pick.hue) * 0.5
       buffer.xs[i] = x * 0.7
@@ -175,6 +181,7 @@ export class FlameEngine extends BaseEngine {
       buffer.hues[i] = (baseHue + hue) % 1
       buffer.alphas[i] = 1
     }
+    if (!isFinite(x) || !isFinite(y)) { x = 0; y = 0 }
     this.x = x; this.y = y; this.hue = hue
     buffer.count = n
     return n

@@ -47,6 +47,7 @@ export class CliffordEngine extends BaseEngine {
       x = nx; y = ny
     }
     const baseHue = (ctx.params.flow * 0.6 + 0.1) % 1
+    const ds = 0.55 // display scale — keeps the attractor inside a comfortable disc
     for (let i = 0; i < n; i++) {
       const nx = Math.sin(aa * y) + c * Math.cos(aa * x)
       const ny = Math.sin(bb * x) + d * Math.cos(bb * y)
@@ -59,8 +60,8 @@ export class CliffordEngine extends BaseEngine {
         px += wn * organic * 0.4
         py += wn * organic * 0.4
       }
-      buffer.xs[i] = px
-      buffer.ys[i] = py
+      buffer.xs[i] = px * ds
+      buffer.ys[i] = py * ds
       // hue varies with radius — gives a cosmic gradient feel.
       const r = Math.sqrt(px * px + py * py) * 0.25
       buffer.hues[i] = (baseHue + r + ctx.params.bloom * 0.1) % 1

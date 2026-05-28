@@ -88,8 +88,9 @@ export class FlowEngine extends BaseEngine {
       }
       this.ax[i] = x
       this.ay[i] = y
-      buffer.xs[i] = x
-      buffer.ys[i] = y
+      const ds = 0.7
+      buffer.xs[i] = x * ds
+      buffer.ys[i] = y * ds
       buffer.hues[i] = (baseHue + this.ah[i] * 0.3 + r * 0.1) % 1
       buffer.alphas[i] = 1
       write++

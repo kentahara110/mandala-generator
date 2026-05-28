@@ -23,6 +23,7 @@ export function makeInitialState(): AppState {
       thickness: 1.2,
       bloom: 0.4,
       saturation: 1.0,
+      zoom: 1.0,
     },
     color: {
       palette: 'cosmic',

@@ -39,23 +39,37 @@ export const App: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const wrap = canvas.parentElement
+    if (!wrap) return
+    // Cap on-screen and internal resolution independently. We deliberately
+    // ignore devicePixelRatio for the internal buffer: every frame walks the
+    // HDR buffer multiple times (fade, splat, optional bloom, tonemap), and
+    // a 2× DPR factor would make Chrome do ~4× the per-frame work for a
+    // glowing diffuse pattern where the extra sharpness is barely visible.
+    const MAX_DISPLAY = 760
+    const MIN_DISPLAY = 360
+    const MAX_INTERNAL = 820
     const resize = () => {
-      const rect = canvas.getBoundingClientRect()
-      const w = Math.max(400, Math.floor(rect.width * dpr))
-      const h = Math.max(400, Math.floor(rect.height * dpr))
+      const rect = wrap.getBoundingClientRect()
+      const display = Math.max(
+        MIN_DISPLAY,
+        Math.min(MAX_DISPLAY, Math.floor(Math.min(rect.width, rect.height) * 0.92)),
+      )
+      const internal = Math.min(MAX_INTERNAL, display)
+      canvas.style.width = `${display}px`
+      canvas.style.height = `${display}px`
       if (!rendererRef.current) {
-        canvas.width = w
-        canvas.height = h
+        canvas.width = internal
+        canvas.height = internal
         rendererRef.current = new Renderer(canvas)
       } else {
-        rendererRef.current.resize(w, h)
+        rendererRef.current.resize(internal, internal)
       }
     }
     resize()
     engineRef.current = createEngine(stateRef.current.engine, stateRef.current.seed)
     const ro = new ResizeObserver(resize)
-    ro.observe(canvas)
+    ro.observe(wrap)
     return () => ro.disconnect()
   }, [])
 
@@ -325,6 +339,9 @@ export const App: React.FC = () => {
               onToggle={() => update((s) => { s.locks.rendering = !s.locks.rendering })}
             />
           </div>
+          <Slider label="Zoom" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
+            display={(v) => `${v.toFixed(2)}×`}
+            onChange={(v) => update((s) => { s.rendering.zoom = v })} />
           <Slider label="Glow" value={s.rendering.glow} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.glow = v })} />
           <Slider label="Fade" value={s.rendering.fade} min={0} max={1}

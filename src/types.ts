@@ -43,6 +43,7 @@ export interface SharedRendering {
   thickness: number   // point/line thickness
   bloom: number       // bloom-like effect
   saturation: number  // color saturation
+  zoom: number        // viewport zoom, 0.1..2.0 (1.0 = default)
 }
 
 export interface SharedColor {

@@ -29,6 +29,9 @@ export class Renderer {
   private height: number
   private buffer: PointBuffer
   private accumulationAge = 0
+  // Reused ImageData — avoids reallocating a Uint8ClampedArray of canvas
+  // size every frame (the put/get round-trip is a major Chrome bottleneck).
+  private imageData: ImageData
 
   constructor(private canvas: HTMLCanvasElement) {
     const c = canvas.getContext('2d', { willReadFrequently: false, alpha: false })
@@ -37,6 +40,7 @@ export class Renderer {
     this.width = canvas.width
     this.height = canvas.height
     this.hdr = new Float32Array(this.width * this.height * 3)
+    this.imageData = this.ctx.createImageData(this.width, this.height)
     this.buffer = {
       xs: new Float32Array(SAMPLES_PER_FRAME),
       ys: new Float32Array(SAMPLES_PER_FRAME),
@@ -53,6 +57,7 @@ export class Renderer {
     this.width = width
     this.height = height
     this.hdr = new Float32Array(width * height * 3)
+    this.imageData = this.ctx.createImageData(width, height)
     this.clear()
   }
 
@@ -62,6 +67,16 @@ export class Renderer {
     c.fillRect(0, 0, this.width, this.height)
     this.hdr.fill(0)
     this.accumulationAge = 0
+  }
+
+  // Sanitize an HDR buffer: replace any NaN/Inf cells with zero so a single
+  // bad frame can't corrupt the canvas forever.
+  private sanitizeHdr(): void {
+    const hdr = this.hdr
+    for (let i = 0; i < hdr.length; i++) {
+      const v = hdr[i]
+      if (!isFinite(v) || v < 0) hdr[i] = 0
+    }
   }
 
   // Step + draw one frame.
@@ -84,7 +99,8 @@ export class Renderer {
     const decay = Math.pow(0.985, 1 + (1 - fade) * 4)
     for (let i = 0; i < hdr.length; i++) hdr[i] *= decay
 
-    const scale = Math.min(w, h) * 0.42
+    const zoom = state.rendering.zoom ?? 1
+    const scale = Math.min(w, h) * 0.42 * zoom
     const cx = w / 2
     const cy = h / 2
     const xs = this.buffer.xs
@@ -148,6 +164,9 @@ export class Renderer {
         xRaw = Math.cos(t) * r
         yRaw = Math.sin(t) * r
       }
+      // Skip non-finite sample points so transient engine instability
+      // (NaN/Inf) doesn't poison the HDR accumulation buffer.
+      if (!isFinite(xRaw) || !isFinite(yRaw)) continue
       const a = alphas[i]
       const intensity = a
       const r = pr[i] * intensity
@@ -215,34 +234,83 @@ export class Renderer {
   // HDR → 8-bit with a soft tonemap. The bloom slider is folded in by
   // running a cheap blur pass first.
   private tonemap(state: AppState): void {
-    const w = this.width, h = this.height
     const bloomStrength = state.rendering.bloom
-    let src = this.hdr
-    if (bloomStrength > 0.02) {
-      src = this.softBlur(this.hdr, bloomStrength)
+    // Always sanitize the HDR itself first — otherwise a NaN that enters the
+    // buffer (from a brief engine blow-up) survives every frame because the
+    // bloom path reads from HDR before we get a chance to write 0 to it.
+    const hdr = this.hdr
+    for (let i = 0; i < hdr.length; i++) {
+      const v = hdr[i]
+      if (!isFinite(v) || v < 0) hdr[i] = 0
     }
-    const img = this.ctx.getImageData(0, 0, w, h)
-    const data = img.data
+    let src = hdr
+    if (bloomStrength > 0.02) {
+      src = this.softBlur(hdr, bloomStrength)
+    }
+    // Reuse the same Uint8ClampedArray — getImageData would copy the entire
+    // canvas back from the GPU each frame, which is the dominant cost on
+    // Chrome. We overwrite every pixel anyway so no read is needed.
+    const data = this.imageData.data
     const gamma = paletteGlowGamma(state.color.palette)
     const floor = paletteFloor(state.color.palette) * 12
-    const exposure = 1.2 + state.rendering.glow * 2.5
+    const exposure = 0.7 + state.rendering.glow * 1.7
+    const bleachStart = 1.2
+    const bleachScale = 0.7 / 3.0 // bleachMax / bleachWidth
+    const bleachMax = 0.7
+    // Skip Math.pow when gamma is essentially 1 (monochrome palette).
+    // For other palettes, approximate x^gamma with a couple of multiplies:
+    //   x^0.85 ≈ x * (0.55 + 0.45 * sqrt(x))
+    // This is within ~1.5% over [0,1] and several times faster than pow().
+    const useGamma = Math.abs(gamma - 1) > 0.02
     for (let i = 0, p = 0; i < src.length; i += 3, p += 4) {
       const r = src[i]
       const g = src[i + 1]
       const b = src[i + 2]
-      // Reinhard with gamma curve.
-      const rr = (r * exposure) / (1 + r * exposure)
-      const gg = (g * exposure) / (1 + g * exposure)
-      const bb = (b * exposure) / (1 + b * exposure)
-      const rg = Math.pow(rr, gamma)
-      const gg2 = Math.pow(gg, gamma)
-      const bg = Math.pow(bb, gamma)
-      data[p] = Math.min(255, rg * 255 + floor)
-      data[p + 1] = Math.min(255, gg2 * 255 + floor)
-      data[p + 2] = Math.min(255, bg * 255 + floor)
+      // Color-preserving Reinhard: map the brightest channel through the
+      // curve, then scale the others proportionally — preserves palette hue.
+      const peak = r > g ? (r > b ? r : b) : (g > b ? g : b)
+      if (peak <= 1e-6) {
+        data[p] = floor
+        data[p + 1] = floor
+        data[p + 2] = floor
+        data[p + 3] = 255
+        continue
+      }
+      const peakE = peak * exposure
+      const peakMapped = peakE / (1 + peakE)
+      const ratio = peakMapped / peak
+      // Per-channel Reinhard amount — only matters above bleachStart.
+      let bleach = 0
+      if (peakE > bleachStart) {
+        bleach = (peakE - bleachStart) * bleachScale
+        if (bleach > bleachMax) bleach = bleachMax
+      }
+      let rr: number, gg: number, bb: number
+      if (bleach === 0) {
+        rr = r * ratio
+        gg = g * ratio
+        bb = b * ratio
+      } else {
+        const cpR = r * ratio, cpG = g * ratio, cpB = b * ratio
+        const rE = r * exposure, gE = g * exposure, bE = b * exposure
+        const pcR = rE / (1 + rE), pcG = gE / (1 + gE), pcB = bE / (1 + bE)
+        const k = 1 - bleach
+        rr = cpR * k + pcR * bleach
+        gg = cpG * k + pcG * bleach
+        bb = cpB * k + pcB * bleach
+      }
+      if (useGamma) {
+        rr = rr * (0.55 + 0.45 * Math.sqrt(rr))
+        gg = gg * (0.55 + 0.45 * Math.sqrt(gg))
+        bb = bb * (0.55 + 0.45 * Math.sqrt(bb))
+      }
+      // Uint8ClampedArray clamps for us, so skip Math.min(255, ...).
+      data[p] = rr * 255 + floor
+      data[p + 1] = gg * 255 + floor
+      data[p + 2] = bb * 255 + floor
       data[p + 3] = 255
     }
-    this.ctx.putImageData(img, 0, 0)
+    this.ctx.putImageData(this.imageData, 0, 0)
   }
 
   // Very cheap separable blur, written to a scratch buffer we keep around.

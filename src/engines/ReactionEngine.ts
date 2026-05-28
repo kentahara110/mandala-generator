@@ -131,6 +131,7 @@ export class ReactionEngine extends BaseEngine {
     // Walk the grid; for each above-threshold cell emit a couple of
     // jittered points so the cloud feels organic rather than gridded.
     const v = this.v
+    const ds = 0.55 // display scale — keep reaction pattern comfortably inside the disc
     for (let iy = 0; iy < GRID && write < n; iy++) {
       for (let ix = 0; ix < GRID && write < n; ix++) {
         const vv = v[iy * GRID + ix]
@@ -139,8 +140,8 @@ export class ReactionEngine extends BaseEngine {
         for (let e = 0; e < emit && write < n; e++) {
           const fx = ((ix - halfGrid) / halfGrid) * scale + (Math.random() - 0.5) * 0.02
           const fy = ((iy - halfGrid) / halfGrid) * scale + (Math.random() - 0.5) * 0.02
-          buffer.xs[write] = fx
-          buffer.ys[write] = fy
+          buffer.xs[write] = fx * ds
+          buffer.ys[write] = fy * ds
           buffer.hues[write] = (baseHue + vv * 0.4) % 1
           buffer.alphas[write] = Math.min(1, vv * 1.8)
           write++

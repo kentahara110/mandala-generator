@@ -81,10 +81,10 @@ html, body, #root {
 }
 
 canvas.mandala {
-  width: 100%;
-  height: 100%;
   display: block;
   background: #07060c;
+  border-radius: 4px;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
 }
 
 .brand {

@@ -44,6 +44,7 @@ export class DeJongEngine extends BaseEngine {
       x = nx; y = ny
     }
     const baseHue = (ctx.params.flow * 0.5 + 0.55) % 1
+    const ds = 0.55
     for (let i = 0; i < n; i++) {
       const nx = Math.sin(aa * y) - Math.cos(b * x)
       const ny = Math.sin(c * x) - Math.cos(dd * y)
@@ -55,8 +56,8 @@ export class DeJongEngine extends BaseEngine {
         px += wn * organic * 0.35
         py += wn * organic * 0.35
       }
-      buffer.xs[i] = px
-      buffer.ys[i] = py
+      buffer.xs[i] = px * ds
+      buffer.ys[i] = py * ds
       const r = Math.sqrt(px * px + py * py) * 0.2
       buffer.hues[i] = (baseHue + r * 0.7) % 1
       buffer.alphas[i] = 1
