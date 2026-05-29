@@ -45,7 +45,7 @@ export function makeInitialState(): AppState {
       color: false,
       structure: false,
       motion: false,
-      symmetry: false,
+      params: false,
       rendering: false,
     },
   }

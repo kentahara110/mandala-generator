@@ -81,7 +81,7 @@ export interface LockState {
   color: boolean
   structure: boolean
   motion: boolean
-  symmetry: boolean
+  params: boolean
   rendering: boolean
 }
 

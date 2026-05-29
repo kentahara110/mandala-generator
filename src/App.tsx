@@ -174,13 +174,13 @@ export const App: React.FC = () => {
       s.color.cosmic = 0.2 + Math.random() * 0.4
     }
     if (!s.locks.structure) {
-      s.structure.density = 0.4 + Math.random() * 0.5
-    }
-    if (!s.locks.symmetry) {
+      // Structure lock now protects every structural knob, not just density,
+      // matching the lock toggle the user actually sees on the section.
       s.structure.symmetry = 1 + Math.floor(Math.random() * 8)
       s.structure.mirror = Math.random() < 0.5 ? 0 : Math.random() * 0.8
       s.structure.petals = 2 + Math.floor(Math.random() * 10)
       s.structure.spiral = (Math.random() - 0.5) * 0.4
+      s.structure.density = 0.4 + Math.random() * 0.5
     }
     if (!s.locks.motion) {
       s.motion.drift = 0.2 + Math.random() * 0.6
@@ -192,13 +192,16 @@ export const App: React.FC = () => {
       s.rendering.glow = 0.4 + Math.random() * 0.4
       s.rendering.fade = 0.35 + Math.random() * 0.5
       s.rendering.bloom = 0.2 + Math.random() * 0.6
-      s.rendering.thickness = 1 + Math.random() * 1.5
+      // Thickness is clamped to the slider's new 0.5–1.5 range.
+      s.rendering.thickness = 0.7 + Math.random() * 0.8
       s.rendering.saturation = 0.7 + Math.random() * 0.6
     }
-    s.params.flow = 0.3 + Math.random() * 0.5
-    s.params.chaos = 0.3 + Math.random() * 0.5
-    s.params.orbit = Math.random()
-    s.params.organic = 0.1 + Math.random() * 0.4
+    if (!s.locks.params) {
+      s.params.flow = 0.3 + Math.random() * 0.5
+      s.params.chaos = 0.3 + Math.random() * 0.5
+      s.params.orbit = Math.random()
+      s.params.organic = 0.1 + Math.random() * 0.4
+    }
     ;(engine as unknown as { setParams?: (p: any) => void }).setParams?.(s.params)
     rendererRef.current?.clear()
     repaint()
@@ -300,53 +303,57 @@ export const App: React.FC = () => {
 
         <div className="section">
           <div className="subtitle">
-            <span>Structure</span>
             <LockToggle
               locked={s.locks.structure}
               onToggle={() => update((s) => { s.locks.structure = !s.locks.structure })}
             />
+            <span>Structure</span>
           </div>
-          <Slider label="Symmetry" hint="回転対称の枚数" value={s.structure.symmetry} min={1} max={12} step={1}
+          <Slider label="Symmetry" hint="Number of radial copies" value={s.structure.symmetry} min={1} max={12} step={1}
             onChange={(v) => update((s) => { s.structure.symmetry = v })} />
-          <Slider label="Mirror" hint="鏡像反射の強さ" value={s.structure.mirror} min={0} max={1}
+          <Slider label="Mirror" hint="Mirror reflection strength" value={s.structure.mirror} min={0} max={1}
             onChange={(v) => update((s) => { s.structure.mirror = v })} />
-          <Slider label="Petals" hint="万華鏡の折りの数" value={s.structure.petals} min={2} max={16} step={1}
+          <Slider label="Petals" hint="Kaleidoscope fold count" value={s.structure.petals} min={2} max={16} step={1}
             onChange={(v) => update((s) => { s.structure.petals = v })} />
-          <Slider label="Spiral" hint="渦の捻り具合" value={s.structure.spiral} min={-0.5} max={0.5}
+          <Slider label="Spiral" hint="Per-ring twist amount" value={s.structure.spiral} min={-0.5} max={0.5}
             onChange={(v) => update((s) => { s.structure.spiral = v })} />
-          <Slider label="Density" hint="描かれる点の密度" value={s.structure.density} min={0.05} max={1}
+          <Slider label="Density" hint="How densely points are drawn" value={s.structure.density} min={0.05} max={1}
             onChange={(v) => update((s) => { s.structure.density = v })} />
         </div>
 
         <div className="section">
           <div className="subtitle">
-            <span>Motion</span>
             <LockToggle
               locked={s.locks.motion}
               onToggle={() => update((s) => { s.locks.motion = !s.locks.motion })}
             />
+            <span>Motion</span>
           </div>
-          <Slider label="Breath" hint="呼吸のようなゆっくりした揺らぎ" value={s.motion.breath} min={0} max={1}
+          <Slider label="Breath" hint="Slow, breath-like modulation" value={s.motion.breath} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.breath = v })} />
-          <Slider label="Drift" hint="マンダラ全体のゆっくりした回転" value={s.motion.drift} min={0} max={1}
+          <Slider label="Drift" hint="Slow rotation of the whole mandala" value={s.motion.drift} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.drift = v })} />
-          <Slider label="Turbulence" hint="不規則な擾乱" value={s.motion.turbulence} min={0} max={1}
+          <Slider label="Turbulence" hint="Irregular noise perturbation" value={s.motion.turbulence} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.turbulence = v })} />
-          <Slider label="Morph Speed" hint="形が変化する速さ" value={s.motion.morphSpeed} min={0} max={1}
+          <Slider label="Morph Speed" hint="How quickly the form evolves" value={s.motion.morphSpeed} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.morphSpeed = v })} />
         </div>
 
         <div className="section">
           <div className="subtitle">
+            <LockToggle
+              locked={s.locks.params}
+              onToggle={() => update((s) => { s.locks.params = !s.locks.params })}
+            />
             <span>Engine Voice</span>
           </div>
-          <Slider label="Chaos" hint="エンジン内部の発散具合" value={s.params.chaos} min={0} max={1}
+          <Slider label="Chaos" hint="How divergent the attractor is" value={s.params.chaos} min={0} max={1}
             onChange={(v) => update((s) => { s.params.chaos = v })} />
-          <Slider label="Flow" hint="軌道の滑らかさ・流れの強さ" value={s.params.flow} min={0} max={1}
+          <Slider label="Flow" hint="Smoothness of the trajectories" value={s.params.flow} min={0} max={1}
             onChange={(v) => update((s) => { s.params.flow = v })} />
-          <Slider label="Orbit" hint="回転バイアス" value={s.params.orbit} min={0} max={1}
+          <Slider label="Orbit" hint="Rotational bias" value={s.params.orbit} min={0} max={1}
             onChange={(v) => update((s) => { s.params.orbit = v })} />
-          <Slider label="Organic" hint="有機的なノイズの強さ" value={s.params.organic} min={0} max={1}
+          <Slider label="Organic" hint="Organic noise strength" value={s.params.organic} min={0} max={1}
             onChange={(v) => update((s) => { s.params.organic = v })} />
         </div>
       </div>
@@ -374,44 +381,44 @@ export const App: React.FC = () => {
       <div className="panel right">
         <div className="section">
           <div className="subtitle">
-            <span>Rendering</span>
             <LockToggle
               locked={s.locks.rendering}
               onToggle={() => update((s) => { s.locks.rendering = !s.locks.rendering })}
             />
+            <span>Rendering</span>
           </div>
-          <Slider label="Zoom" hint="表示倍率" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
+          <Slider label="Zoom" hint="View zoom" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
             display={(v) => `${v.toFixed(2)}×`}
             onChange={(v) => update((s) => { s.rendering.zoom = v })} />
-          <Slider label="Glow" hint="発光の強さ" value={s.rendering.glow} min={0} max={1}
+          <Slider label="Glow" hint="Glow intensity" value={s.rendering.glow} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.glow = v })} />
-          <Slider label="Fade" hint="残像の持続時間" value={s.rendering.fade} min={0} max={1}
+          <Slider label="Fade" hint="Trail persistence" value={s.rendering.fade} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.fade = v })} />
-          <Slider label="Thickness" hint="点・線の太さ" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
+          <Slider label="Thickness" hint="Point / line thickness" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
             onChange={(v) => update((s) => { s.rendering.thickness = v })} />
-          <Slider label="Bloom" hint="光のにじみ・幻想感" value={s.rendering.bloom} min={0} max={1}
+          <Slider label="Bloom" hint="Soft bloom-like glow" value={s.rendering.bloom} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.bloom = v })} />
-          <Slider label="Saturation" hint="彩度" value={s.rendering.saturation} min={0} max={1.6}
+          <Slider label="Saturation" hint="Color saturation" value={s.rendering.saturation} min={0} max={1.6}
             onChange={(v) => update((s) => { s.rendering.saturation = v })} />
         </div>
 
         <div className="section">
           <div className="subtitle">
-            <span>Color</span>
             <LockToggle
               locked={s.locks.color}
               onToggle={() => update((s) => { s.locks.color = !s.locks.color })}
             />
+            <span>Color</span>
           </div>
           <PaletteGrid
             active={s.color.palette}
             onSelect={(p) => update((s) => { s.color.palette = p })}
           />
-          <Slider label="Hue Shift" hint="色相のずれ" value={s.color.hueShift} min={0} max={1}
+          <Slider label="Hue Shift" hint="Rotate the palette hue" value={s.color.hueShift} min={0} max={1}
             onChange={(v) => update((s) => { s.color.hueShift = v })} />
-          <Slider label="Cosmic" hint="色の揺らぎ・宇宙感" value={s.color.cosmic} min={0} max={1}
+          <Slider label="Cosmic" hint="Color modulation amplitude" value={s.color.cosmic} min={0} max={1}
             onChange={(v) => update((s) => { s.color.cosmic = v })} />
-          <Slider label="Cycle" hint="時間とともに色が変化する速さ" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
+          <Slider label="Cycle" hint="Auto colour drift over time" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
             display={(v) => (v < 0.005 ? 'off' : `${v.toFixed(2)}`)}
             onChange={(v) => update((s) => { s.color.cycleSpeed = v })} />
         </div>
@@ -422,14 +429,14 @@ export const App: React.FC = () => {
             ✦ Mutate Slightly
           </button>
           <div className="help-text">
-            現在の見た目を保ちつつ、微小な変異を加えます
+            Nudge the shape while preserving the current look.
           </div>
           <div style={{ height: 10 }} />
-          <button className="btn danger full" onClick={randomize}>
-            🎲 Randomize All
+          <button className="btn shuffle full" onClick={randomize}>
+            Shuffle All
           </button>
           <div className="help-text">
-            ロックされていない全パラメータをランダム化します。元の設定には戻せません。
+            Randomizes every unlocked section. There's no undo.
           </div>
         </div>
 

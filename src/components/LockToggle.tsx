@@ -10,9 +10,10 @@ export const LockToggle: React.FC<Props> = ({ locked, onToggle }) => {
     <button
       className={`lock-toggle ${locked ? 'locked' : ''}`}
       onClick={onToggle}
-      title={locked ? 'Locked — preserved on randomize / mutate' : 'Unlocked'}
+      title={locked ? 'Locked — protected from Randomize / Mutate' : 'Lock this section'}
+      aria-pressed={locked}
     >
-      {locked ? '●' : '○'}
+      <span className="lock-label">{locked ? 'Locked' : 'Lock'}</span>
     </button>
   )
 }
