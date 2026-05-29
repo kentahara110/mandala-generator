@@ -24,9 +24,11 @@ html, body, #root {
 }
 
 /* Floating chrome buttons — hamburger drawer toggle + immersive toggle.
-   Hidden on desktop layout (overridden below), shown on compact + immersive. */
+   Drawer toggle is fixed at viewport corner (compact only). Immersive
+   toggle lives inside .canvas-wrap so on desktop it sits at the top-right
+   of the canvas area — not over the right panel — and on compact it
+   naturally lands at the top-right of the full-viewport canvas. */
 .chrome-btn {
-  position: fixed;
   z-index: 200;
   width: 38px;
   height: 38px;
@@ -49,13 +51,15 @@ html, body, #root {
   border-color: var(--accent);
 }
 .drawer-toggle {
+  position: fixed;
   top: 12px;
   left: 12px;
   display: none;  /* hidden on desktop */
 }
 .immersive-toggle {
-  top: 12px;
-  right: 12px;
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 /* Backdrop for the drawer — only visible when drawer is open on compact.
@@ -74,84 +78,8 @@ html, body, #root {
   pointer-events: auto;
 }
 
-/* COMPACT layout — tablet & mobile.
-   The 3-column grid collapses to a single column. The canvas fills the
-   screen, and the two original panels are stacked into a single
-   vertically-scrollable drawer anchored to the left. */
-@media (max-width: 1023px) {
-  .app {
-    grid-template-columns: 1fr;
-  }
-  .drawer-toggle {
-    display: flex;
-  }
-  .panel,
-  .panel.right {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: min(340px, 92vw);
-    z-index: 100;
-    transform: translateX(-105%);
-    transition: transform 0.28s ease;
-    background: rgba(14, 10, 24, 0.94);
-    border-right: 1px solid var(--panel-border);
-    border-left: none;
-    /* Top padding clears the 38px hamburger button (top:12, bottom:50) with
-       extra breathing room so section headings don't sit underneath. */
-    padding: 64px 16px 80px;
-    overflow-y: auto;
-  }
-  /* Stack: left panel takes the top half, right panel the bottom half.
-     Both scroll independently so every control remains reachable even
-     at iPhone SE 375×667. */
-  .panel {
-    height: 55vh;
-    bottom: auto;
-    border-bottom: 1px solid rgba(120, 100, 200, 0.18);
-  }
-  .panel.right {
-    top: 55vh;
-    height: 45vh;
-    padding-top: 16px;
-  }
-  .app.drawer-open .panel,
-  .app.drawer-open .panel.right {
-    transform: translateX(0);
-  }
-  .canvas-wrap {
-    grid-column: 1;
-    width: 100vw;
-    height: 100vh;
-    padding: 50px 0 0;
-  }
-  .brand {
-    top: 16px;
-    left: 62px;     /* clear of the hamburger (12 + 38 + 12 gap) */
-    right: 62px;    /* clear of the immersive toggle */
-    font-size: 9px;
-  }
-}
-
-/* Tighten further on phone-sized viewports. */
-@media (max-width: 480px) {
-  .panel,
-  .panel.right {
-    width: min(320px, 100vw);
-  }
-  .brand {
-    font-size: 8px;
-    letter-spacing: 0.18em;
-    left: 60px;
-    right: 60px;
-    top: 20px;
-  }
-  /* On very narrow phones, hide the secondary line so the brand fits cleanly. */
-  .brand .dim {
-    display: none;
-  }
-}
+/* Responsive @media overrides for COMPACT / phone are appended at the end
+   of this file so source order keeps them above the base rules. */
 
 /* IMMERSIVE — hide every chrome element except the exit toggle. */
 .app.immersive .panel,
@@ -278,7 +206,7 @@ canvas.mandala {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--text);
   letter-spacing: 0.05em;
 }
@@ -286,6 +214,16 @@ canvas.mandala {
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
   font-size: 10px;
+}
+/* Small explanatory text between the label and the slider track. */
+.slider-row .hint {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  opacity: 0.85;
 }
 .slider-row input[type=range] {
   width: 100%;
@@ -381,6 +319,20 @@ canvas.mandala {
 }
 .btn.primary:hover {
   background: linear-gradient(135deg, rgba(184, 156, 255, 0.4), rgba(120, 100, 200, 0.2));
+}
+/* Destructive / irreversible action — Randomize All wipes locked-off
+   parameters and can't be undone, so we make it visually distinct. */
+.btn.danger {
+  background: linear-gradient(135deg, rgba(255, 140, 90, 0.18), rgba(220, 80, 110, 0.10));
+  border-color: rgba(255, 140, 90, 0.55);
+  color: #ffd0bc;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.btn.danger:hover {
+  background: linear-gradient(135deg, rgba(255, 140, 90, 0.32), rgba(220, 80, 110, 0.18));
+  border-color: rgba(255, 160, 110, 0.85);
+  box-shadow: 0 0 14px rgba(255, 140, 90, 0.18);
 }
 .btn.full { width: 100%; }
 
@@ -505,4 +457,113 @@ canvas.mandala {
 }
 .seed-row input:focus {
   border-color: var(--accent);
+}
+
+/* =========================================================================
+   RESPONSIVE OVERRIDES — appended at end so they win source-order ties.
+   ========================================================================= */
+
+/* COMPACT layout — tablet & mobile.
+   - 3-column grid → 1 column; canvas fills the viewport.
+   - Both panels stack into a narrow drawer on the left so most of the
+     mandala stays visible behind it.
+   - Title sits at the top centre; hamburger sits BELOW it (no overlap).
+   - The immersive toggle (inside .canvas-wrap) also moves below the title.
+   - 2-column grids collapse to 1 column for the narrow drawer. */
+@media (max-width: 1023px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .drawer-toggle {
+    display: flex;
+    top: 14px;
+    left: 14px;
+  }
+  .immersive-toggle {
+    top: 14px;
+    right: 14px;
+  }
+  .panel,
+  .panel.right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
+       (≥ 160px) and never wastes space on iPad (≤ 300px). */
+    width: clamp(160px, 40vw, 300px);
+    z-index: 100;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    background: rgba(14, 10, 24, 0.94);
+    border-right: 1px solid var(--panel-border);
+    border-left: none;
+    padding: 56px 14px 80px;
+    overflow-y: auto;
+  }
+  .panel {
+    height: 55vh;
+    bottom: auto;
+    border-bottom: 1px solid rgba(120, 100, 200, 0.18);
+  }
+  .panel.right {
+    top: 55vh;
+    height: 45vh;
+    padding-top: 14px;
+  }
+  .app.drawer-open .panel,
+  .app.drawer-open .panel.right {
+    transform: translateX(0);
+  }
+  .canvas-wrap {
+    grid-column: 1;
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+  }
+  .brand {
+    top: 14px;
+    left: 16px;
+    right: 16px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+  }
+  .brand .dim {
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    margin-top: 2px;
+  }
+  /* 2-column → 1-column inside the narrow drawer. */
+  .engine-grid {
+    grid-template-columns: 1fr;
+  }
+  .btn-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  /* Palette grid stays 2-column (16 items as 1 col would scroll forever) but
+     chips are tighter. */
+  .palette-chip {
+    height: 22px;
+  }
+  .palette-chip .name {
+    font-size: 8px;
+  }
+  /* Slider hints are slightly tighter so the drawer feels less cramped. */
+  .slider-row .hint {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+}
+
+/* Phone-sized — drop the seed-line so the centred title fits cleanly. */
+@media (max-width: 480px) {
+  .brand {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  .brand .dim {
+    display: none;
+  }
 }

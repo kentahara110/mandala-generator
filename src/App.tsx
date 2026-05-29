@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppState,
   EngineId,
-  EngineSnapshot,
 } from './types'
 import { makeInitialState } from './state/initialState'
 import { createEngine, ENGINES } from './engines'
@@ -12,13 +11,7 @@ import { Slider } from './components/Slider'
 import { EngineSelector } from './components/EngineSelector'
 import { PaletteGrid } from './components/PaletteGrid'
 import { LockToggle } from './components/LockToggle'
-import { EvolutionPanel } from './components/EvolutionPanel'
 import { PALETTE_IDS } from './render/Palettes'
-
-interface Variant {
-  snapshot: EngineSnapshot
-  key: string
-}
 
 export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -32,8 +25,6 @@ export const App: React.FC = () => {
   // stateRef so we don't pay reconciliation cost per frame.
   const [, forceRender] = useState(0)
   const repaint = useCallback(() => forceRender((n) => n + 1), [])
-
-  const [variants, setVariants] = useState<Variant[]>([])
 
   // Layout: drawer (mobile/tablet) and immersive (full-screen mandala) modes.
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -221,30 +212,6 @@ export const App: React.FC = () => {
     rendererRef.current?.clear()
   }, [])
 
-  // Generate four candidate variants from current state.
-  const spawnVariants = useCallback(() => {
-    const engine = engineRef.current
-    if (!engine) return
-    const base = engine.snapshot()
-    const out: Variant[] = []
-    for (let i = 0; i < 4; i++) {
-      const child = createEngine(base.engine, base.seed ^ (1 << (i * 5 + 3)))
-      child.restore(base)
-      child.mutate(0.25 + i * 0.12)
-      out.push({ snapshot: child.snapshot(), key: `v${Date.now()}-${i}` })
-    }
-    setVariants(out)
-  }, [])
-
-  const pickVariant = useCallback(
-    (snap: EngineSnapshot) => {
-      engineRef.current?.restore(snap)
-      rendererRef.current?.clear()
-      setVariants([])
-    },
-    [],
-  )
-
   const exportPng = useCallback(() => {
     const renderer = rendererRef.current
     if (!renderer) return
@@ -298,7 +265,6 @@ export const App: React.FC = () => {
   }, [repaint])
 
   const s = stateRef.current
-  const baseState = useMemo(() => stateRef.current, [variants.length])
 
   const appClass = [
     'app',
@@ -309,21 +275,13 @@ export const App: React.FC = () => {
 
   return (
     <div className={appClass}>
-      {/* Top-bar floating controls — present on every layout */}
+      {/* Drawer toggle — only relevant on compact layouts. */}
       <button
         className="chrome-btn drawer-toggle"
         onClick={() => setDrawerOpen((v) => !v)}
         aria-label="Toggle controls drawer"
       >
         ☰
-      </button>
-      <button
-        className="chrome-btn immersive-toggle"
-        onClick={toggleImmersive}
-        aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
-        title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
-      >
-        {immersive ? '✕' : '⛶'}
       </button>
       <div
         className="drawer-backdrop"
@@ -348,15 +306,15 @@ export const App: React.FC = () => {
               onToggle={() => update((s) => { s.locks.structure = !s.locks.structure })}
             />
           </div>
-          <Slider label="Symmetry" value={s.structure.symmetry} min={1} max={12} step={1}
+          <Slider label="Symmetry" hint="回転対称の枚数" value={s.structure.symmetry} min={1} max={12} step={1}
             onChange={(v) => update((s) => { s.structure.symmetry = v })} />
-          <Slider label="Mirror" value={s.structure.mirror} min={0} max={1}
+          <Slider label="Mirror" hint="鏡像反射の強さ" value={s.structure.mirror} min={0} max={1}
             onChange={(v) => update((s) => { s.structure.mirror = v })} />
-          <Slider label="Petals" value={s.structure.petals} min={2} max={16} step={1}
+          <Slider label="Petals" hint="万華鏡の折りの数" value={s.structure.petals} min={2} max={16} step={1}
             onChange={(v) => update((s) => { s.structure.petals = v })} />
-          <Slider label="Spiral" value={s.structure.spiral} min={-0.5} max={0.5}
+          <Slider label="Spiral" hint="渦の捻り具合" value={s.structure.spiral} min={-0.5} max={0.5}
             onChange={(v) => update((s) => { s.structure.spiral = v })} />
-          <Slider label="Density" value={s.structure.density} min={0.05} max={1}
+          <Slider label="Density" hint="描かれる点の密度" value={s.structure.density} min={0.05} max={1}
             onChange={(v) => update((s) => { s.structure.density = v })} />
         </div>
 
@@ -368,13 +326,13 @@ export const App: React.FC = () => {
               onToggle={() => update((s) => { s.locks.motion = !s.locks.motion })}
             />
           </div>
-          <Slider label="Breath" value={s.motion.breath} min={0} max={1}
+          <Slider label="Breath" hint="呼吸のようなゆっくりした揺らぎ" value={s.motion.breath} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.breath = v })} />
-          <Slider label="Drift" value={s.motion.drift} min={0} max={1}
+          <Slider label="Drift" hint="マンダラ全体のゆっくりした回転" value={s.motion.drift} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.drift = v })} />
-          <Slider label="Turbulence" value={s.motion.turbulence} min={0} max={1}
+          <Slider label="Turbulence" hint="不規則な擾乱" value={s.motion.turbulence} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.turbulence = v })} />
-          <Slider label="Morph Speed" value={s.motion.morphSpeed} min={0} max={1}
+          <Slider label="Morph Speed" hint="形が変化する速さ" value={s.motion.morphSpeed} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.morphSpeed = v })} />
         </div>
 
@@ -382,13 +340,13 @@ export const App: React.FC = () => {
           <div className="subtitle">
             <span>Engine Voice</span>
           </div>
-          <Slider label="Chaos" value={s.params.chaos} min={0} max={1}
+          <Slider label="Chaos" hint="エンジン内部の発散具合" value={s.params.chaos} min={0} max={1}
             onChange={(v) => update((s) => { s.params.chaos = v })} />
-          <Slider label="Flow" value={s.params.flow} min={0} max={1}
+          <Slider label="Flow" hint="軌道の滑らかさ・流れの強さ" value={s.params.flow} min={0} max={1}
             onChange={(v) => update((s) => { s.params.flow = v })} />
-          <Slider label="Orbit" value={s.params.orbit} min={0} max={1}
+          <Slider label="Orbit" hint="回転バイアス" value={s.params.orbit} min={0} max={1}
             onChange={(v) => update((s) => { s.params.orbit = v })} />
-          <Slider label="Organic" value={s.params.organic} min={0} max={1}
+          <Slider label="Organic" hint="有機的なノイズの強さ" value={s.params.organic} min={0} max={1}
             onChange={(v) => update((s) => { s.params.organic = v })} />
         </div>
       </div>
@@ -401,6 +359,14 @@ export const App: React.FC = () => {
             {ENGINES.find((e) => e.id === s.engine)?.label} · seed {s.seed.toString(16).padStart(8, '0')}
           </span>
         </div>
+        <button
+          className="chrome-btn immersive-toggle"
+          onClick={toggleImmersive}
+          aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
+          title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
+        >
+          {immersive ? '✕' : '⛶'}
+        </button>
         <canvas ref={canvasRef} className="mandala" />
       </div>
 
@@ -414,18 +380,18 @@ export const App: React.FC = () => {
               onToggle={() => update((s) => { s.locks.rendering = !s.locks.rendering })}
             />
           </div>
-          <Slider label="Zoom" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
+          <Slider label="Zoom" hint="表示倍率" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
             display={(v) => `${v.toFixed(2)}×`}
             onChange={(v) => update((s) => { s.rendering.zoom = v })} />
-          <Slider label="Glow" value={s.rendering.glow} min={0} max={1}
+          <Slider label="Glow" hint="発光の強さ" value={s.rendering.glow} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.glow = v })} />
-          <Slider label="Fade" value={s.rendering.fade} min={0} max={1}
+          <Slider label="Fade" hint="残像の持続時間" value={s.rendering.fade} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.fade = v })} />
-          <Slider label="Thickness" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
+          <Slider label="Thickness" hint="点・線の太さ" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
             onChange={(v) => update((s) => { s.rendering.thickness = v })} />
-          <Slider label="Bloom" value={s.rendering.bloom} min={0} max={1}
+          <Slider label="Bloom" hint="光のにじみ・幻想感" value={s.rendering.bloom} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.bloom = v })} />
-          <Slider label="Saturation" value={s.rendering.saturation} min={0} max={1.6}
+          <Slider label="Saturation" hint="彩度" value={s.rendering.saturation} min={0} max={1.6}
             onChange={(v) => update((s) => { s.rendering.saturation = v })} />
         </div>
 
@@ -441,11 +407,11 @@ export const App: React.FC = () => {
             active={s.color.palette}
             onSelect={(p) => update((s) => { s.color.palette = p })}
           />
-          <Slider label="Hue Shift" value={s.color.hueShift} min={0} max={1}
+          <Slider label="Hue Shift" hint="色相のずれ" value={s.color.hueShift} min={0} max={1}
             onChange={(v) => update((s) => { s.color.hueShift = v })} />
-          <Slider label="Cosmic" value={s.color.cosmic} min={0} max={1}
+          <Slider label="Cosmic" hint="色の揺らぎ・宇宙感" value={s.color.cosmic} min={0} max={1}
             onChange={(v) => update((s) => { s.color.cosmic = v })} />
-          <Slider label="Cycle" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
+          <Slider label="Cycle" hint="時間とともに色が変化する速さ" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
             display={(v) => (v < 0.005 ? 'off' : `${v.toFixed(2)}`)}
             onChange={(v) => update((s) => { s.color.cycleSpeed = v })} />
         </div>
@@ -455,26 +421,16 @@ export const App: React.FC = () => {
           <button className="btn primary full" onClick={mutateSlightly}>
             ✦ Mutate Slightly
           </button>
-          <div style={{ height: 6 }} />
-          <button className="btn full" onClick={randomize}>
-            Surprise Me
+          <div className="help-text">
+            現在の見た目を保ちつつ、微小な変異を加えます
+          </div>
+          <div style={{ height: 10 }} />
+          <button className="btn danger full" onClick={randomize}>
+            🎲 Randomize All
           </button>
-          <div style={{ height: 6 }} />
-          <button className="btn full" onClick={spawnVariants}>
-            Spawn Four Variants
-          </button>
-          {variants.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              <EvolutionPanel
-                variants={variants}
-                baseState={baseState}
-                onPick={pickVariant}
-              />
-              <div className="help-text">
-                Click one to make it your new origin.
-              </div>
-            </div>
-          )}
+          <div className="help-text">
+            ロックされていない全パラメータをランダム化します。元の設定には戻せません。
+          </div>
         </div>
 
         <div className="section">

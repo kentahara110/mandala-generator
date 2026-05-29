@@ -2,6 +2,8 @@ import React from 'react'
 
 interface Props {
   label: string
+  /** Short human-readable description shown under the label. */
+  hint?: string
   value: number
   min: number
   max: number
@@ -10,7 +12,7 @@ interface Props {
   onChange: (v: number) => void
 }
 
-export const Slider: React.FC<Props> = ({ label, value, min, max, step = 0.01, display, onChange }) => {
+export const Slider: React.FC<Props> = ({ label, hint, value, min, max, step = 0.01, display, onChange }) => {
   const formatted = display
     ? display(value)
     : Number.isInteger(step) || step >= 1
@@ -22,6 +24,7 @@ export const Slider: React.FC<Props> = ({ label, value, min, max, step = 0.01, d
         <span>{label}</span>
         <span className="val">{formatted}</span>
       </div>
+      {hint && <div className="hint">{hint}</div>}
       <input
         type="range"
         min={min}
