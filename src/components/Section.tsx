@@ -7,7 +7,16 @@ interface Props {
      *  CSS regardless of this value. On compact, it controls visibility. */
     open: boolean
     onToggle: () => void
-    lock?: { locked: boolean; onToggle: () => void }
+    lock?: {
+        locked: boolean
+        onToggle: () => void
+        labels?: {
+            locked: string
+            unlocked: string
+            titleLocked?: string
+            titleUnlocked?: string
+        }
+    }
     children: React.ReactNode
 }
 
@@ -32,6 +41,7 @@ export const Section: React.FC<Props> = ({ title, open, onToggle, lock, children
                         <LockToggle
                             locked={lock.locked}
                             onToggle={lock.onToggle}
+                            labels={lock.labels}
                         />
                     )}
                     <span className="section-chevron" aria-hidden />

@@ -620,6 +620,41 @@ canvas.mandala {
   letter-spacing: 0.03em;
 }
 
+/* Language switcher — sits at the very top of the left panel and is
+   always visible (never folded into an accordion). */
+.lang-switch {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(40, 30, 70, 0.30);
+  border: 1px solid rgba(120, 100, 200, 0.18);
+}
+.lang-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.lang-btn:hover {
+  color: var(--text);
+}
+.lang-btn.active {
+  background: linear-gradient(135deg, rgba(184, 156, 255, 0.30), rgba(120, 100, 200, 0.18));
+  color: var(--text);
+  box-shadow: 0 0 10px rgba(184, 156, 255, 0.18) inset;
+}
+
 .section {
   border-top: 1px solid rgba(120, 100, 200, 0.1);
   padding-top: 14px;

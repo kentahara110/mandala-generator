@@ -4,7 +4,7 @@ import type {
   EngineId,
 } from './types'
 import { makeInitialState } from './state/initialState'
-import { createEngine, ENGINES } from './engines'
+import { createEngine } from './engines'
 import type { GeneratorEngine } from './types'
 import { Renderer } from './render/Renderer'
 import { Slider } from './components/Slider'
@@ -12,6 +12,7 @@ import { EngineSelector } from './components/EngineSelector'
 import { PaletteGrid } from './components/PaletteGrid'
 import { Section } from './components/Section'
 import { PALETTE_IDS } from './render/Palettes'
+import { translations, loadLang, persistLang, type Lang } from './i18n'
 
 type SectionId = 'engine' | 'structure' | 'motion' | 'params' | 'rendering' | 'color' | 'discover' | 'save'
 
@@ -32,6 +33,14 @@ export const App: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [immersive, setImmersive] = useState(false)
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1024)
+
+  // UI language. Default is Japanese; persisted to localStorage.
+  const [lang, setLangState] = useState<Lang>(() => loadLang())
+  const t = translations[lang]
+  const setLang = useCallback((next: Lang) => {
+    setLangState(next)
+    persistLang(next)
+  }, [])
   // Accordion: which sections are expanded. On compact this drives visibility;
   // on desktop the CSS forces every body open regardless of this state.
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set())
@@ -409,7 +418,7 @@ export const App: React.FC = () => {
       <button
         className="chrome-btn drawer-toggle"
         onClick={() => setDrawerOpen((v) => !v)}
-        aria-label="Toggle controls drawer"
+        aria-label={t.drawerToggleAria}
       >
         <span className="icon icon-hamburger" />
       </button>
@@ -422,16 +431,16 @@ export const App: React.FC = () => {
           it stays as the page background while the drawer slides over it). */}
       <div className="canvas-wrap">
         <div className="brand">
-          Generative Mandala Laboratory
+          {t.brand}
           <span className="dim">
-            {ENGINES.find((e) => e.id === s.engine)?.label} · seed {s.seed.toString(16).padStart(8, '0')}
+            {t.engines[s.engine].label} · {t.seedLabel} {s.seed.toString(16).padStart(8, '0')}
           </span>
         </div>
         <button
           className="chrome-btn immersive-toggle"
           onClick={toggleImmersive}
-          aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
-          title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
+          aria-label={immersive ? t.exitImmersive : t.enterImmersive}
+          title={immersive ? t.exitImmersive : t.enterImmersive}
         >
           <span className={`icon ${immersive ? 'icon-close' : 'icon-expand'}`} />
         </button>
@@ -445,73 +454,98 @@ export const App: React.FC = () => {
 
       {/* LEFT PANEL — engines + structure + motion */}
       <div className="panel">
+        {/* Always-visible language switcher at the very top of the menu.
+            Lives outside the accordion sections so the user can flip
+            language without having to expand anything first. */}
+        <div className="lang-switch" role="group" aria-label={t.langSwitchTitle}>
+          <button
+            type="button"
+            className={`lang-btn ${lang === 'ja' ? 'active' : ''}`}
+            onClick={() => setLang('ja')}
+            aria-pressed={lang === 'ja'}
+          >
+            日本語
+          </button>
+          <button
+            type="button"
+            className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
+            onClick={() => setLang('en')}
+            aria-pressed={lang === 'en'}
+          >
+            English
+          </button>
+        </div>
+
         <Section
-          title="Engine"
+          title={t.sectionEngine}
           open={openSections.has('engine')}
           onToggle={() => toggleSection('engine')}
         >
-          <EngineSelector active={s.engine} onSelect={switchEngine} />
+          <EngineSelector active={s.engine} onSelect={switchEngine} labels={t.engines} />
           <div className="help-text">
-            Each engine is a different way of dreaming.
+            {t.engineHelp}
           </div>
         </Section>
 
         <Section
-          title="Structure"
+          title={t.sectionStructure}
           open={openSections.has('structure')}
           onToggle={() => toggleSection('structure')}
           lock={{
             locked: s.locks.structure,
             onToggle: () => update((s) => { s.locks.structure = !s.locks.structure }),
+            labels: { locked: t.lockLocked, unlocked: t.lockUnlocked, titleLocked: t.lockTitleLocked, titleUnlocked: t.lockTitleUnlocked },
           }}
         >
-          <Slider label="Symmetry" hint="Number of radial copies" value={s.structure.symmetry} min={1} max={12} step={1}
+          <Slider label={t.symmetry} hint={t.symmetryHint} value={s.structure.symmetry} min={1} max={12} step={1}
             onChange={(v) => update((s) => { s.structure.symmetry = v })} />
-          <Slider label="Mirror" hint="Mirror reflection strength" value={s.structure.mirror} min={0} max={1}
+          <Slider label={t.mirror} hint={t.mirrorHint} value={s.structure.mirror} min={0} max={1}
             onChange={(v) => update((s) => { s.structure.mirror = v })} />
-          <Slider label="Petals" hint="Kaleidoscope fold count" value={s.structure.petals} min={2} max={16} step={1}
+          <Slider label={t.petals} hint={t.petalsHint} value={s.structure.petals} min={2} max={16} step={1}
             onChange={(v) => update((s) => { s.structure.petals = v })} />
-          <Slider label="Spiral" hint="Per-ring twist amount" value={s.structure.spiral} min={-0.5} max={0.5}
+          <Slider label={t.spiral} hint={t.spiralHint} value={s.structure.spiral} min={-0.5} max={0.5}
             onChange={(v) => update((s) => { s.structure.spiral = v })} />
-          <Slider label="Density" hint="How densely points are drawn" value={s.structure.density} min={0.05} max={1}
+          <Slider label={t.density} hint={t.densityHint} value={s.structure.density} min={0.05} max={1}
             onChange={(v) => update((s) => { s.structure.density = v })} />
         </Section>
 
         <Section
-          title="Motion"
+          title={t.sectionMotion}
           open={openSections.has('motion')}
           onToggle={() => toggleSection('motion')}
           lock={{
             locked: s.locks.motion,
             onToggle: () => update((s) => { s.locks.motion = !s.locks.motion }),
+            labels: { locked: t.lockLocked, unlocked: t.lockUnlocked, titleLocked: t.lockTitleLocked, titleUnlocked: t.lockTitleUnlocked },
           }}
         >
-          <Slider label="Breath" hint="Slow, breath-like modulation" value={s.motion.breath} min={0} max={1}
+          <Slider label={t.breath} hint={t.breathHint} value={s.motion.breath} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.breath = v })} />
-          <Slider label="Drift" hint="Slow rotation of the whole mandala" value={s.motion.drift} min={0} max={1}
+          <Slider label={t.drift} hint={t.driftHint} value={s.motion.drift} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.drift = v })} />
-          <Slider label="Turbulence" hint="Irregular noise perturbation" value={s.motion.turbulence} min={0} max={1}
+          <Slider label={t.turbulence} hint={t.turbulenceHint} value={s.motion.turbulence} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.turbulence = v })} />
-          <Slider label="Morph Speed" hint="How quickly the form evolves" value={s.motion.morphSpeed} min={0} max={1}
+          <Slider label={t.morphSpeed} hint={t.morphSpeedHint} value={s.motion.morphSpeed} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.morphSpeed = v })} />
         </Section>
 
         <Section
-          title="Engine Voice"
+          title={t.sectionParams}
           open={openSections.has('params')}
           onToggle={() => toggleSection('params')}
           lock={{
             locked: s.locks.params,
             onToggle: () => update((s) => { s.locks.params = !s.locks.params }),
+            labels: { locked: t.lockLocked, unlocked: t.lockUnlocked, titleLocked: t.lockTitleLocked, titleUnlocked: t.lockTitleUnlocked },
           }}
         >
-          <Slider label="Chaos" hint="How divergent the attractor is" value={s.params.chaos} min={0} max={1}
+          <Slider label={t.chaos} hint={t.chaosHint} value={s.params.chaos} min={0} max={1}
             onChange={(v) => update((s) => { s.params.chaos = v })} />
-          <Slider label="Flow" hint="Smoothness of the trajectories" value={s.params.flow} min={0} max={1}
+          <Slider label={t.flow} hint={t.flowHint} value={s.params.flow} min={0} max={1}
             onChange={(v) => update((s) => { s.params.flow = v })} />
-          <Slider label="Orbit" hint="Rotational bias" value={s.params.orbit} min={0} max={1}
+          <Slider label={t.orbit} hint={t.orbitHint} value={s.params.orbit} min={0} max={1}
             onChange={(v) => update((s) => { s.params.orbit = v })} />
-          <Slider label="Organic" hint="Organic noise strength" value={s.params.organic} min={0} max={1}
+          <Slider label={t.organic} hint={t.organicHint} value={s.params.organic} min={0} max={1}
             onChange={(v) => update((s) => { s.params.organic = v })} />
         </Section>
       </div>
@@ -519,85 +553,87 @@ export const App: React.FC = () => {
       {/* RIGHT PANEL — rendering, color, actions */}
       <div className="panel right">
         <Section
-          title="Rendering"
+          title={t.sectionRendering}
           open={openSections.has('rendering')}
           onToggle={() => toggleSection('rendering')}
           lock={{
             locked: s.locks.rendering,
             onToggle: () => update((s) => { s.locks.rendering = !s.locks.rendering }),
+            labels: { locked: t.lockLocked, unlocked: t.lockUnlocked, titleLocked: t.lockTitleLocked, titleUnlocked: t.lockTitleUnlocked },
           }}
         >
-          <Slider label="Zoom" hint="View zoom" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
+          <Slider label={t.zoom} hint={t.zoomHint} value={s.rendering.zoom} min={0.1} max={2} step={0.05}
             display={(v) => `${v.toFixed(2)}×`}
             onChange={(v) => update((s) => { s.rendering.zoom = v })} />
-          <Slider label="Glow" hint="Glow intensity" value={s.rendering.glow} min={0} max={1}
+          <Slider label={t.glow} hint={t.glowHint} value={s.rendering.glow} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.glow = v })} />
-          <Slider label="Fade" hint="Trail persistence" value={s.rendering.fade} min={0} max={1}
+          <Slider label={t.fade} hint={t.fadeHint} value={s.rendering.fade} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.fade = v })} />
-          <Slider label="Thickness" hint="Point / line thickness" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
+          <Slider label={t.thickness} hint={t.thicknessHint} value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
             onChange={(v) => update((s) => { s.rendering.thickness = v })} />
-          <Slider label="Bloom" hint="Soft bloom-like glow" value={s.rendering.bloom} min={0} max={1}
+          <Slider label={t.bloom} hint={t.bloomHint} value={s.rendering.bloom} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.bloom = v })} />
-          <Slider label="Saturation" hint="Color saturation" value={s.rendering.saturation} min={0} max={1.6}
+          <Slider label={t.saturation} hint={t.saturationHint} value={s.rendering.saturation} min={0} max={1.6}
             onChange={(v) => update((s) => { s.rendering.saturation = v })} />
         </Section>
 
         <Section
-          title="Color"
+          title={t.sectionColor}
           open={openSections.has('color')}
           onToggle={() => toggleSection('color')}
           lock={{
             locked: s.locks.color,
             onToggle: () => update((s) => { s.locks.color = !s.locks.color }),
+            labels: { locked: t.lockLocked, unlocked: t.lockUnlocked, titleLocked: t.lockTitleLocked, titleUnlocked: t.lockTitleUnlocked },
           }}
         >
           <PaletteGrid
             active={s.color.palette}
             onSelect={(p) => update((s) => { s.color.palette = p })}
           />
-          <Slider label="Hue Shift" hint="Rotate the palette hue" value={s.color.hueShift} min={0} max={1}
+          <Slider label={t.hueShift} hint={t.hueShiftHint} value={s.color.hueShift} min={0} max={1}
             onChange={(v) => update((s) => { s.color.hueShift = v })} />
-          <Slider label="Cosmic" hint="Color modulation amplitude" value={s.color.cosmic} min={0} max={1}
+          <Slider label={t.cosmic} hint={t.cosmicHint} value={s.color.cosmic} min={0} max={1}
             onChange={(v) => update((s) => { s.color.cosmic = v })} />
-          <Slider label="Cycle" hint="Auto colour drift over time" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
-            display={(v) => (v < 0.005 ? 'off' : `${v.toFixed(2)}`)}
+          <Slider label={t.cycle} hint={t.cycleHint} value={s.color.cycleSpeed} min={0} max={1} step={0.01}
+            display={(v) => (v < 0.005 ? t.cycleOff : `${v.toFixed(2)}`)}
             onChange={(v) => update((s) => { s.color.cycleSpeed = v })} />
         </Section>
 
         <Section
-          title="Discover"
+          title={t.sectionDiscover}
           open={openSections.has('discover')}
           onToggle={() => toggleSection('discover')}
         >
           <button className="btn primary full" onClick={mutateSlightly}>
-            ✦ Mutate Slightly
+            {t.mutateSlightly}
           </button>
           <div className="help-text">
-            Nudge the shape while preserving the current look.
+            {t.mutateHelp}
           </div>
           <div style={{ height: 10 }} />
           <button className="btn shuffle full" onClick={randomize}>
-            ✦ Shuffle All
+            {t.shuffleAll}
           </button>
           <div className="help-text">
-            Randomizes every unlocked section. There's no undo.
+            {t.shuffleHelp}
           </div>
         </Section>
 
         <Section
-          title="Save"
+          title={t.sectionSave}
           open={openSections.has('save')}
           onToggle={() => toggleSection('save')}
         >
           <div className="btn-row">
-            <button className="btn" onClick={exportPng}>PNG</button>
-            <button className="btn" onClick={exportPreset}>JSON</button>
+            <button className="btn" onClick={exportPng}>{t.exportPng}</button>
+            <button className="btn" onClick={exportPreset}>{t.exportJson}</button>
           </div>
           <div className="btn-row">
-            <button className="btn full" onClick={importPreset}>Load Preset</button>
+            <button className="btn full" onClick={importPreset}>{t.loadPreset}</button>
           </div>
           <div className="help-text">
-            Seed: <code>{s.seed.toString(16).padStart(8, '0')}</code>
+            {t.seedLabel} <code>{s.seed.toString(16).padStart(8, '0')}</code>
           </div>
         </Section>
       </div>
