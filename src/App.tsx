@@ -66,12 +66,8 @@ export const App: React.FC = () => {
 
   const toggleImmersive = useCallback(() => {
     const goingIn = !immersive
-    // Call the Fullscreen API SYNCHRONOUSLY here, directly inside the click
-    // handler's call stack. Browsers (especially mobile Safari) gate
-    // `requestFullscreen` to "user-activated" tasks; wrapping it in a
-    // setState callback breaks that and the request is silently ignored.
     type AnyEl = HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void>
+      webkitRequestFullscreen?: (options?: FullscreenOptions) => Promise<void> | void
       webkitRequestFullScreen?: () => void
       mozRequestFullScreen?: () => Promise<void>
       msRequestFullscreen?: () => Promise<void>
@@ -85,24 +81,51 @@ export const App: React.FC = () => {
     }
     const doc = document as AnyDoc
     const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
-    try {
-      if (goingIn && !inFs) {
-        // documentElement (= <html>) is the most reliable target across
-        // browsers — Safari, Chrome and Firefox all accept it.
-        const el = document.documentElement as AnyEl
-        const req =
-          el.requestFullscreen ||
-          el.webkitRequestFullscreen ||
-          el.webkitRequestFullScreen ||
-          el.mozRequestFullScreen ||
-          el.msRequestFullscreen
-        if (req) {
-          const result = req.call(el)
+
+    // -----------------------------------------------------------------
+    // Fullscreen API call MUST run synchronously inside this click stack
+    // so the browser counts it as user-activated. We try a handful of
+    // targets (the spec one, plus webkit/moz/ms variants) and we hint
+    // navigationUI: 'hide' so browsers that honour the spec (Chrome on
+    // Android) actively suppress their navigation chrome.
+    // -----------------------------------------------------------------
+    const tryRequestFullscreen = (el: AnyEl): boolean => {
+      const fns: Array<(opts?: FullscreenOptions) => unknown> = [
+        el.requestFullscreen,
+        el.webkitRequestFullscreen,
+        el.webkitRequestFullScreen as unknown as (opts?: FullscreenOptions) => unknown,
+        el.mozRequestFullScreen as unknown as (opts?: FullscreenOptions) => unknown,
+        el.msRequestFullscreen as unknown as (opts?: FullscreenOptions) => unknown,
+      ].filter(Boolean) as Array<(opts?: FullscreenOptions) => unknown>
+      for (const fn of fns) {
+        try {
+          // navigationUI: 'hide' is the spec hint; ignored elsewhere.
+          const result = fn.call(el, { navigationUI: 'hide' } as FullscreenOptions)
           if (result && typeof (result as Promise<void>).catch === 'function') {
             ;(result as Promise<void>).catch(() => {})
           }
+          return true
+        } catch {
+          // Try the next vendor prefix.
         }
-      } else if (!goingIn && inFs) {
+      }
+      return false
+    }
+
+    if (goingIn && !inFs) {
+      // Try <html> first — it's the broadest target. If a browser refuses
+      // (older iOS Safari refuses for non-video elements), fall back to
+      // the app root and finally the canvas-wrap.
+      const candidates: AnyEl[] = [
+        document.documentElement as AnyEl,
+        (document.querySelector('.app') as AnyEl | null) ?? null,
+        (document.querySelector('.canvas-wrap') as AnyEl | null) ?? null,
+      ].filter(Boolean) as AnyEl[]
+      for (const c of candidates) {
+        if (tryRequestFullscreen(c)) break
+      }
+    } else if (!goingIn && inFs) {
+      try {
         const exit =
           doc.exitFullscreen ||
           doc.webkitExitFullscreen ||
@@ -115,37 +138,36 @@ export const App: React.FC = () => {
             ;(result as Promise<void>).catch(() => {})
           }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore — immersive still works in-page even if the FS API rejects.
     }
 
+    // -----------------------------------------------------------------
+    // iOS Safari fallback: even with the Fullscreen API the address bar
+    // sometimes lingers. iOS only collapses chrome when the page can
+    // scroll AND the user has scrolled past 0. We unlock overflow + give
+    // the body a 1px overflow + scroll. The `.app.immersive { position:
+    // fixed }` rule keeps the UI rock-still on top of the scrollable
+    // body. We do NOT re-lock overflow afterwards — re-locking causes
+    // iOS to think the page is no longer scrollable and the URL bar
+    // returns.
+    // -----------------------------------------------------------------
+    const html = document.documentElement
+    const body = document.body
     if (goingIn) {
-      // YouTube-on-mobile-Safari trick: iOS only collapses the URL bar
-      // when the page is scrollable and the user has scrolled past 0. The
-      // app normally has `overflow: hidden` on <html> / <body> to lock the
-      // layout, so we temporarily unlock and force a 1px scroll. The next
-      // frame we re-lock — but the URL bar stays collapsed because Safari
-      // only re-shows it on a scroll *toward* the top.
-      const html = document.documentElement
-      const body = document.body
       html.style.overflow = 'auto'
       body.style.overflow = 'auto'
-      body.style.minHeight = 'calc(100vh + 1px)'
+      body.style.minHeight = 'calc(100dvh + 1px)'
+      // Two RAF kicks: first to give the layout time to update with the new
+      // body height, second to actually scroll.
       requestAnimationFrame(() => {
-        window.scrollTo(0, 1)
-        // Re-lock shortly after so the user can't scroll the page accidentally.
-        window.setTimeout(() => {
-          html.style.overflow = ''
-          body.style.overflow = ''
-          body.style.minHeight = ''
-        }, 120)
+        requestAnimationFrame(() => window.scrollTo(0, 1))
       })
     } else {
-      // Make sure we leave the page in its locked state on exit.
-      document.documentElement.style.overflow = ''
-      document.body.style.overflow = ''
-      document.body.style.minHeight = ''
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.minHeight = ''
       window.scrollTo(0, 0)
     }
     setImmersive(goingIn)

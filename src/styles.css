@@ -11,7 +11,10 @@
 }
 
 html, body, #root {
-  background: radial-gradient(ellipse at center, #0a0816 0%, #04030a 100%);
+  /* Use the canvas's own background colour everywhere so there's no visible
+     edge between the canvas and the surrounding viewport — the whole page
+     reads as a single dark field whether in immersive mode or not. */
+  background: #07060c;
   color: var(--text);
 }
 
