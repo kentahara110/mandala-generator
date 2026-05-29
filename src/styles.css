@@ -157,12 +157,12 @@ html, body, #root {
 .drawer-toggle {
   position: fixed;
   top: 12px;
-  left: 12px;
+  right: 12px;
   display: none;  /* hidden on desktop */
 }
 .immersive-toggle {
   position: absolute;
-  top: 16px;
+  bottom: 16px;
   right: 16px;
 }
 
@@ -275,7 +275,7 @@ html:-webkit-full-screen {
 
 .subtitle {
   font-size: 10px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-dim);
   margin-top: 24px;
@@ -533,7 +533,7 @@ canvas.mandala {
   transition: all 0.2s ease;
   white-space: nowrap;
   user-select: none;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
 }
 .lock-toggle:hover {
   background: rgba(60, 45, 100, 0.5);
@@ -608,6 +608,59 @@ canvas.mandala {
   margin-top: 0;
 }
 
+/* Accordion plumbing — header (toggle + lock) row, chevron, collapsible
+   body. On DESKTOP all bodies stay visible (see the @media override at the
+   bottom of the file). On COMPACT only `.is-open` sections show their body. */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* margin-bottom: 10px; */
+  /* Lay the lock toggle just under the toggle row on compact (where the
+     subtitle becomes a tappable header). On desktop it sits inline. */
+}
+.section-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+.section-toggle .subtitle {
+  /* Reset the .subtitle margin inside the toggle so the header row hugs
+     the section border. */
+  margin: 0;
+}
+.section-chevron {
+  /* A small "v" arrow drawn with two borders, rotated. */
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--text-dim);
+  border-bottom: 1.5px solid var(--text-dim);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  /* Hidden by default — only shown on compact. */
+  display: none;
+}
+.section.is-open > .section-head .section-chevron {
+  transform: rotate(-135deg);
+}
+.section-body {
+  /* Default desktop behaviour: always visible. Compact rules below hide it
+     when the section is collapsed. */
+  display: block;
+  padding-top: 18px;
+}
+
 .seed-row {
   display: flex;
   gap: 6px;
@@ -644,13 +697,34 @@ canvas.mandala {
   .app {
     grid-template-columns: 1fr;
   }
+  /* Accordion is ACTIVE on compact: collapsed sections hide their body and
+     show a chevron in the header. */
+  .section-chevron {
+    display: inline-block;
+  }
+  .section.is-closed > .section-body {
+    display: none;
+  }
+  .section-toggle {
+    padding: 6px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .section-toggle:active .subtitle {
+    color: var(--accent);
+  }
+  /* Tighten section spacing in the drawer — collapsed sections shouldn't
+     have the same airy padding as desktop. */
+  .section {
+    padding-top: 8px;
+    margin-top: 8px;
+  }
   .drawer-toggle {
     display: flex;
     top: 14px;
-    left: 14px;
+    right: 14px;
   }
   .immersive-toggle {
-    top: 14px;
+    bottom: 14px;
     right: 14px;
   }
   /* Drawer-container is now the single scrollable drawer that contains
@@ -665,7 +739,7 @@ canvas.mandala {
     right: 0;
     /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
        (≥ 160px) and never wastes space on iPad (≤ 320px). */
-    width: clamp(180px, 48vw, 320px);
+    width: clamp(200px, 52vw, 320px);
     z-index: 100;
     transform: translateX(105%);
     transition: transform 0.28s ease;
@@ -695,9 +769,9 @@ canvas.mandala {
     grid-column: auto;
   }
   .panel.right {
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(120, 100, 200, 0.18);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(120, 100, 200, 0.1);
   }
   .canvas-wrap {
     grid-column: 1;
@@ -769,7 +843,19 @@ canvas.mandala {
     /* height: 20px;
     padding: 0 10px;
     font-size: 10px; */
+    margin-bottom: 0;
+    height: 19px;
+    font-size: 8px;
+    padding: 0 6px;
   }
+  .section-head {
+    margin-bottom: 0px;
+    }
+    .section-head-right{
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
 }
 
 /* Phone-sized — drop the seed-line so the centred title fits cleanly. */

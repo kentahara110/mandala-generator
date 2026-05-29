@@ -10,8 +10,10 @@ import { Renderer } from './render/Renderer'
 import { Slider } from './components/Slider'
 import { EngineSelector } from './components/EngineSelector'
 import { PaletteGrid } from './components/PaletteGrid'
-import { LockToggle } from './components/LockToggle'
+import { Section } from './components/Section'
 import { PALETTE_IDS } from './render/Palettes'
+
+type SectionId = 'engine' | 'structure' | 'motion' | 'params' | 'rendering' | 'color' | 'discover' | 'save'
 
 export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -30,6 +32,17 @@ export const App: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [immersive, setImmersive] = useState(false)
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1024)
+  // Accordion: which sections are expanded. On compact this drives visibility;
+  // on desktop the CSS forces every body open regardless of this state.
+  const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set())
+  const toggleSection = useCallback((id: SectionId) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   // Track viewport breakpoint so the resize logic below can switch between
   // the desktop 3-column layout and the mobile drawer layout.
@@ -53,35 +66,41 @@ export const App: React.FC = () => {
 
   const toggleImmersive = useCallback(() => {
     const goingIn = !immersive
-    // IMPORTANT: call the Fullscreen API SYNCHRONOUSLY here, directly inside
-    // the click handler's call stack. Browsers (especially mobile Safari)
-    // gate `requestFullscreen` to "user-activated" tasks; wrapping it in a
+    // Call the Fullscreen API SYNCHRONOUSLY here, directly inside the click
+    // handler's call stack. Browsers (especially mobile Safari) gate
+    // `requestFullscreen` to "user-activated" tasks; wrapping it in a
     // setState callback breaks that and the request is silently ignored.
+    type AnyEl = HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>
+      webkitRequestFullScreen?: () => void
+      mozRequestFullScreen?: () => Promise<void>
+      msRequestFullscreen?: () => Promise<void>
+    }
+    type AnyDoc = Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => Promise<void>
+      webkitCancelFullScreen?: () => void
+      mozCancelFullScreen?: () => Promise<void>
+      msExitFullscreen?: () => Promise<void>
+    }
+    const doc = document as AnyDoc
+    const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
     try {
-      const el = document.documentElement as HTMLElement & {
-        webkitRequestFullscreen?: () => Promise<void>
-        webkitRequestFullScreen?: () => void
-        mozRequestFullScreen?: () => Promise<void>
-        msRequestFullscreen?: () => Promise<void>
-      }
-      const doc = document as Document & {
-        webkitFullscreenElement?: Element | null
-        webkitExitFullscreen?: () => Promise<void>
-        webkitCancelFullScreen?: () => void
-        mozCancelFullScreen?: () => Promise<void>
-        msExitFullscreen?: () => Promise<void>
-      }
-      const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
       if (goingIn && !inFs) {
+        // documentElement (= <html>) is the most reliable target across
+        // browsers — Safari, Chrome and Firefox all accept it.
+        const el = document.documentElement as AnyEl
         const req =
           el.requestFullscreen ||
           el.webkitRequestFullscreen ||
           el.webkitRequestFullScreen ||
           el.mozRequestFullScreen ||
           el.msRequestFullscreen
-        const result = req?.call(el)
-        if (result && typeof (result as Promise<void>).catch === 'function') {
-          ;(result as Promise<void>).catch(() => {})
+        if (req) {
+          const result = req.call(el)
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            ;(result as Promise<void>).catch(() => {})
+          }
         }
       } else if (!goingIn && inFs) {
         const exit =
@@ -90,22 +109,44 @@ export const App: React.FC = () => {
           doc.webkitCancelFullScreen ||
           doc.mozCancelFullScreen ||
           doc.msExitFullscreen
-        const result = exit?.call(doc)
-        if (result && typeof (result as Promise<void>).catch === 'function') {
-          ;(result as Promise<void>).catch(() => {})
+        if (exit) {
+          const result = exit.call(doc)
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            ;(result as Promise<void>).catch(() => {})
+          }
         }
       }
     } catch {
       // ignore — immersive still works in-page even if the FS API rejects.
     }
-    // Mobile-Safari URL-bar hiding fallback: the browser only hides chrome
-    // when there's room to scroll. After entering immersive we nudge a tiny
-    // scroll on the next tick so iOS collapses the URL bar even when the
-    // Fullscreen API silently rejected the request.
+
     if (goingIn) {
+      // YouTube-on-mobile-Safari trick: iOS only collapses the URL bar
+      // when the page is scrollable and the user has scrolled past 0. The
+      // app normally has `overflow: hidden` on <html> / <body> to lock the
+      // layout, so we temporarily unlock and force a 1px scroll. The next
+      // frame we re-lock — but the URL bar stays collapsed because Safari
+      // only re-shows it on a scroll *toward* the top.
+      const html = document.documentElement
+      const body = document.body
+      html.style.overflow = 'auto'
+      body.style.overflow = 'auto'
+      body.style.minHeight = 'calc(100vh + 1px)'
       requestAnimationFrame(() => {
         window.scrollTo(0, 1)
+        // Re-lock shortly after so the user can't scroll the page accidentally.
+        window.setTimeout(() => {
+          html.style.overflow = ''
+          body.style.overflow = ''
+          body.style.minHeight = ''
+        }, 120)
       })
+    } else {
+      // Make sure we leave the page in its locked state on exit.
+      document.documentElement.style.overflow = ''
+      document.body.style.overflow = ''
+      document.body.style.minHeight = ''
+      window.scrollTo(0, 0)
     }
     setImmersive(goingIn)
     setDrawerOpen(false)
@@ -382,22 +423,26 @@ export const App: React.FC = () => {
 
       {/* LEFT PANEL — engines + structure + motion */}
       <div className="panel">
-        <div className="section">
-          <div className="subtitle">Engine</div>
+        <Section
+          title="Engine"
+          open={openSections.has('engine')}
+          onToggle={() => toggleSection('engine')}
+        >
           <EngineSelector active={s.engine} onSelect={switchEngine} />
           <div className="help-text">
             Each engine is a different way of dreaming.
           </div>
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">
-            <LockToggle
-              locked={s.locks.structure}
-              onToggle={() => update((s) => { s.locks.structure = !s.locks.structure })}
-            />
-            <span>Structure</span>
-          </div>
+        <Section
+          title="Structure"
+          open={openSections.has('structure')}
+          onToggle={() => toggleSection('structure')}
+          lock={{
+            locked: s.locks.structure,
+            onToggle: () => update((s) => { s.locks.structure = !s.locks.structure }),
+          }}
+        >
           <Slider label="Symmetry" hint="Number of radial copies" value={s.structure.symmetry} min={1} max={12} step={1}
             onChange={(v) => update((s) => { s.structure.symmetry = v })} />
           <Slider label="Mirror" hint="Mirror reflection strength" value={s.structure.mirror} min={0} max={1}
@@ -408,16 +453,17 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.structure.spiral = v })} />
           <Slider label="Density" hint="How densely points are drawn" value={s.structure.density} min={0.05} max={1}
             onChange={(v) => update((s) => { s.structure.density = v })} />
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">
-            <LockToggle
-              locked={s.locks.motion}
-              onToggle={() => update((s) => { s.locks.motion = !s.locks.motion })}
-            />
-            <span>Motion</span>
-          </div>
+        <Section
+          title="Motion"
+          open={openSections.has('motion')}
+          onToggle={() => toggleSection('motion')}
+          lock={{
+            locked: s.locks.motion,
+            onToggle: () => update((s) => { s.locks.motion = !s.locks.motion }),
+          }}
+        >
           <Slider label="Breath" hint="Slow, breath-like modulation" value={s.motion.breath} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.breath = v })} />
           <Slider label="Drift" hint="Slow rotation of the whole mandala" value={s.motion.drift} min={0} max={1}
@@ -426,16 +472,17 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.motion.turbulence = v })} />
           <Slider label="Morph Speed" hint="How quickly the form evolves" value={s.motion.morphSpeed} min={0} max={1}
             onChange={(v) => update((s) => { s.motion.morphSpeed = v })} />
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">
-            <LockToggle
-              locked={s.locks.params}
-              onToggle={() => update((s) => { s.locks.params = !s.locks.params })}
-            />
-            <span>Engine Voice</span>
-          </div>
+        <Section
+          title="Engine Voice"
+          open={openSections.has('params')}
+          onToggle={() => toggleSection('params')}
+          lock={{
+            locked: s.locks.params,
+            onToggle: () => update((s) => { s.locks.params = !s.locks.params }),
+          }}
+        >
           <Slider label="Chaos" hint="How divergent the attractor is" value={s.params.chaos} min={0} max={1}
             onChange={(v) => update((s) => { s.params.chaos = v })} />
           <Slider label="Flow" hint="Smoothness of the trajectories" value={s.params.flow} min={0} max={1}
@@ -444,19 +491,20 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.params.orbit = v })} />
           <Slider label="Organic" hint="Organic noise strength" value={s.params.organic} min={0} max={1}
             onChange={(v) => update((s) => { s.params.organic = v })} />
-        </div>
+        </Section>
       </div>
 
       {/* RIGHT PANEL — rendering, color, actions */}
       <div className="panel right">
-        <div className="section">
-          <div className="subtitle">
-            <LockToggle
-              locked={s.locks.rendering}
-              onToggle={() => update((s) => { s.locks.rendering = !s.locks.rendering })}
-            />
-            <span>Rendering</span>
-          </div>
+        <Section
+          title="Rendering"
+          open={openSections.has('rendering')}
+          onToggle={() => toggleSection('rendering')}
+          lock={{
+            locked: s.locks.rendering,
+            onToggle: () => update((s) => { s.locks.rendering = !s.locks.rendering }),
+          }}
+        >
           <Slider label="Zoom" hint="View zoom" value={s.rendering.zoom} min={0.1} max={2} step={0.05}
             display={(v) => `${v.toFixed(2)}×`}
             onChange={(v) => update((s) => { s.rendering.zoom = v })} />
@@ -470,16 +518,17 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.rendering.bloom = v })} />
           <Slider label="Saturation" hint="Color saturation" value={s.rendering.saturation} min={0} max={1.6}
             onChange={(v) => update((s) => { s.rendering.saturation = v })} />
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">
-            <LockToggle
-              locked={s.locks.color}
-              onToggle={() => update((s) => { s.locks.color = !s.locks.color })}
-            />
-            <span>Color</span>
-          </div>
+        <Section
+          title="Color"
+          open={openSections.has('color')}
+          onToggle={() => toggleSection('color')}
+          lock={{
+            locked: s.locks.color,
+            onToggle: () => update((s) => { s.locks.color = !s.locks.color }),
+          }}
+        >
           <PaletteGrid
             active={s.color.palette}
             onSelect={(p) => update((s) => { s.color.palette = p })}
@@ -491,10 +540,13 @@ export const App: React.FC = () => {
           <Slider label="Cycle" hint="Auto colour drift over time" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
             display={(v) => (v < 0.005 ? 'off' : `${v.toFixed(2)}`)}
             onChange={(v) => update((s) => { s.color.cycleSpeed = v })} />
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">Discover</div>
+        <Section
+          title="Discover"
+          open={openSections.has('discover')}
+          onToggle={() => toggleSection('discover')}
+        >
           <button className="btn primary full" onClick={mutateSlightly}>
             ✦ Mutate Slightly
           </button>
@@ -508,10 +560,13 @@ export const App: React.FC = () => {
           <div className="help-text">
             Randomizes every unlocked section. There's no undo.
           </div>
-        </div>
+        </Section>
 
-        <div className="section">
-          <div className="subtitle">Save</div>
+        <Section
+          title="Save"
+          open={openSections.has('save')}
+          onToggle={() => toggleSection('save')}
+        >
           <div className="btn-row">
             <button className="btn" onClick={exportPng}>PNG</button>
             <button className="btn" onClick={exportPreset}>JSON</button>
@@ -522,7 +577,7 @@ export const App: React.FC = () => {
           <div className="help-text">
             Seed: <code>{s.seed.toString(16).padStart(8, '0')}</code>
           </div>
-        </div>
+        </Section>
       </div>
 
       </div>{/* /.drawer-container */}

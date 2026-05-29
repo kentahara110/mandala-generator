@@ -9,7 +9,7 @@ export const LockToggle: React.FC<Props> = ({ locked, onToggle }) => {
   return (
     <button
       className={`lock-toggle ${locked ? 'locked' : ''}`}
-      onClick={onToggle}
+      onClick={(e) => { e.stopPropagation(); onToggle() }}
       title={locked ? 'Locked — protected from Randomize / Mutate' : 'Lock this section'}
       aria-pressed={locked}
     >
