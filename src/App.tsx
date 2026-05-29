@@ -3,7 +3,6 @@ import type {
   AppState,
   EngineId,
   EngineSnapshot,
-  PaletteId,
 } from './types'
 import { makeInitialState } from './state/initialState'
 import { createEngine, ENGINES } from './engines'
@@ -14,6 +13,7 @@ import { EngineSelector } from './components/EngineSelector'
 import { PaletteGrid } from './components/PaletteGrid'
 import { LockToggle } from './components/LockToggle'
 import { EvolutionPanel } from './components/EvolutionPanel'
+import { PALETTE_IDS } from './render/Palettes'
 
 interface Variant {
   snapshot: EngineSnapshot
@@ -35,6 +35,45 @@ export const App: React.FC = () => {
 
   const [variants, setVariants] = useState<Variant[]>([])
 
+  // Layout: drawer (mobile/tablet) and immersive (full-screen mandala) modes.
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [immersive, setImmersive] = useState(false)
+  const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1024)
+
+  // Track viewport breakpoint so the resize logic below can switch between
+  // the desktop 3-column layout and the mobile drawer layout.
+  useEffect(() => {
+    const onResize = () => setIsCompact(window.innerWidth < 1024)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Escape key exits immersive / closes drawer for quick recovery.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (immersive) setImmersive(false)
+        else if (drawerOpen) setDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [immersive, drawerOpen])
+
+  const toggleImmersive = useCallback(() => {
+    setImmersive((v) => {
+      const next = !v
+      // Best-effort browser fullscreen — silently ignored if denied.
+      if (next && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {})
+      } else if (!next && document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {})
+      }
+      return next
+    })
+    setDrawerOpen(false)
+  }, [])
+
   // Initialize engine + renderer.
   useEffect(() => {
     const canvas = canvasRef.current
@@ -47,14 +86,18 @@ export const App: React.FC = () => {
     // a 2× DPR factor would make Chrome do ~4× the per-frame work for a
     // glowing diffuse pattern where the extra sharpness is barely visible.
     const MAX_DISPLAY = 760
-    const MIN_DISPLAY = 360
+    const MIN_DISPLAY = 280
     const MAX_INTERNAL = 820
     const resize = () => {
       const rect = wrap.getBoundingClientRect()
-      const display = Math.max(
-        MIN_DISPLAY,
-        Math.min(MAX_DISPLAY, Math.floor(Math.min(rect.width, rect.height) * 0.92)),
-      )
+      // On compact screens (mobile/tablet) the panels are drawer overlays so
+      // we let the canvas fill the available square area entirely. On
+      // desktop we keep a small margin around the figure for breathing room.
+      const compact = window.innerWidth < 1024
+      const factor = compact ? 0.98 : 0.92
+      const fit = Math.floor(Math.min(rect.width, rect.height) * factor)
+      const upper = compact ? fit : Math.min(MAX_DISPLAY, fit)
+      const display = Math.max(MIN_DISPLAY, upper)
       const internal = Math.min(MAX_INTERNAL, display)
       canvas.style.width = `${display}px`
       canvas.style.height = `${display}px`
@@ -135,11 +178,7 @@ export const App: React.FC = () => {
     engineRef.current = engine
 
     if (!s.locks.color) {
-      const palettes: PaletteId[] = [
-        'cosmic', 'neon', 'monochrome', 'gold',
-        'ultraviolet', 'bioluminescent', 'ember', 'deepsea',
-      ]
-      s.color.palette = palettes[Math.floor(Math.random() * palettes.length)]
+      s.color.palette = PALETTE_IDS[Math.floor(Math.random() * PALETTE_IDS.length)]
       s.color.hueShift = Math.random()
       s.color.cosmic = 0.2 + Math.random() * 0.4
     }
@@ -261,8 +300,36 @@ export const App: React.FC = () => {
   const s = stateRef.current
   const baseState = useMemo(() => stateRef.current, [variants.length])
 
+  const appClass = [
+    'app',
+    isCompact ? 'compact' : '',
+    drawerOpen ? 'drawer-open' : '',
+    immersive ? 'immersive' : '',
+  ].filter(Boolean).join(' ')
+
   return (
-    <div className="app">
+    <div className={appClass}>
+      {/* Top-bar floating controls — present on every layout */}
+      <button
+        className="chrome-btn drawer-toggle"
+        onClick={() => setDrawerOpen((v) => !v)}
+        aria-label="Toggle controls drawer"
+      >
+        ☰
+      </button>
+      <button
+        className="chrome-btn immersive-toggle"
+        onClick={toggleImmersive}
+        aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
+        title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
+      >
+        {immersive ? '✕' : '⛶'}
+      </button>
+      <div
+        className="drawer-backdrop"
+        onClick={() => setDrawerOpen(false)}
+      />
+
       {/* LEFT PANEL — engines + structure + motion */}
       <div className="panel">
         <div className="section">
@@ -378,6 +445,9 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.color.hueShift = v })} />
           <Slider label="Cosmic" value={s.color.cosmic} min={0} max={1}
             onChange={(v) => update((s) => { s.color.cosmic = v })} />
+          <Slider label="Cycle" value={s.color.cycleSpeed} min={0} max={1} step={0.01}
+            display={(v) => (v < 0.005 ? 'off' : `${v.toFixed(2)}`)}
+            onChange={(v) => update((s) => { s.color.cycleSpeed = v })} />
         </div>
 
         <div className="section">

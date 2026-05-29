@@ -18,6 +18,14 @@ export type PaletteId =
   | 'bioluminescent'
   | 'ember'
   | 'deepsea'
+  | 'aurora'
+  | 'nebula'
+  | 'sakura'
+  | 'twilight'
+  | 'moss'
+  | 'copper'
+  | 'mercury'
+  | 'opal'
 
 // Abstract user-facing parameters — these intentionally do NOT map 1:1
 // to mathematical attractor coefficients. They modulate the underlying
@@ -50,6 +58,7 @@ export interface SharedColor {
   palette: PaletteId
   hueShift: number    // 0..1
   cosmic: number      // 0..1 — color modulation amplitude
+  cycleSpeed: number  // 0..1 — automatic hue drift over time (0 = off)
 }
 
 // Engine-specific abstract parameters. Each engine reads only the keys

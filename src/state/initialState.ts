@@ -29,6 +29,7 @@ export function makeInitialState(): AppState {
       palette: 'cosmic',
       hueShift: 0,
       cosmic: 0.3,
+      cycleSpeed: 0,
     },
     params: {
       chaos: 0.5,

@@ -16,6 +16,14 @@ const PALETTE_LABELS: Record<PaletteId, string> = {
   bioluminescent: 'Bio',
   ember: 'Ember',
   deepsea: 'Deep Sea',
+  aurora: 'Aurora',
+  nebula: 'Nebula',
+  sakura: 'Sakura',
+  twilight: 'Twilight',
+  moss: 'Moss',
+  copper: 'Copper',
+  mercury: 'Mercury',
+  opal: 'Opal',
 }
 
 function gradientFor(id: PaletteId): string {

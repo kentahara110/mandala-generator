@@ -23,6 +23,153 @@ html, body, #root {
   grid-template-columns: 320px 1fr 280px;
 }
 
+/* Floating chrome buttons — hamburger drawer toggle + immersive toggle.
+   Hidden on desktop layout (overridden below), shown on compact + immersive. */
+.chrome-btn {
+  position: fixed;
+  z-index: 200;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 156, 255, 0.25);
+  background: rgba(20, 14, 35, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.chrome-btn:hover {
+  background: rgba(40, 30, 70, 0.85);
+  border-color: var(--accent);
+}
+.drawer-toggle {
+  top: 12px;
+  left: 12px;
+  display: none;  /* hidden on desktop */
+}
+.immersive-toggle {
+  top: 12px;
+  right: 12px;
+}
+
+/* Backdrop for the drawer — only visible when drawer is open on compact. */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 4, 12, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.app.drawer-open .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* COMPACT layout — tablet & mobile.
+   The 3-column grid collapses to a single column. The canvas fills the
+   screen, and the two original panels are stacked into a single
+   vertically-scrollable drawer anchored to the left. */
+@media (max-width: 1023px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .drawer-toggle {
+    display: flex;
+  }
+  .panel,
+  .panel.right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(340px, 92vw);
+    z-index: 100;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    background: rgba(14, 10, 24, 0.94);
+    border-right: 1px solid var(--panel-border);
+    border-left: none;
+    padding: 56px 16px 80px;  /* room for the close hint */
+    overflow-y: auto;
+  }
+  /* Stack: left panel takes the top half, right panel the bottom half.
+     Both scroll independently so every control remains reachable even
+     at iPhone SE 375×667. */
+  .panel {
+    height: 55vh;
+    bottom: auto;
+    border-bottom: 1px solid rgba(120, 100, 200, 0.18);
+  }
+  .panel.right {
+    top: 55vh;
+    height: 45vh;
+    padding-top: 16px;
+  }
+  .app.drawer-open .panel,
+  .app.drawer-open .panel.right {
+    transform: translateX(0);
+  }
+  .canvas-wrap {
+    grid-column: 1;
+    width: 100vw;
+    height: 100vh;
+    padding: 50px 0 0;
+  }
+  .brand {
+    left: 60px;  /* clear of the hamburger button */
+    font-size: 9px;
+  }
+}
+
+/* Tighten further on phone-sized viewports. */
+@media (max-width: 480px) {
+  .panel,
+  .panel.right {
+    width: min(320px, 100vw);
+  }
+  .brand {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    left: 58px;
+    top: 18px;
+  }
+}
+
+/* IMMERSIVE — hide every chrome element except the exit toggle. */
+.app.immersive .panel,
+.app.immersive .brand,
+.app.immersive .drawer-toggle,
+.app.immersive .drawer-backdrop {
+  display: none !important;
+}
+.app.immersive {
+  grid-template-columns: 1fr;
+}
+.app.immersive .canvas-wrap {
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.app.immersive .immersive-toggle {
+  /* keep the exit toggle visible but make it a bit translucent so it
+     doesn't break the meditative atmosphere. */
+  opacity: 0.4;
+  background: rgba(15, 10, 25, 0.4);
+}
+.app.immersive .immersive-toggle:hover {
+  opacity: 1;
+}
+
 .panel {
   background: var(--panel);
   backdrop-filter: blur(18px);
@@ -222,11 +369,11 @@ canvas.mandala {
 .palette-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 8px;
 }
 .palette-chip {
-  height: 30px;
+  height: 28px;
   border-radius: 6px;
   cursor: pointer;
   border: 1px solid rgba(120, 100, 200, 0.15);
@@ -241,9 +388,9 @@ canvas.mandala {
   bottom: 2px;
   left: 4px;
   font-size: 9px;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.95);
   pointer-events: none;
 }
 

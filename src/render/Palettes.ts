@@ -98,6 +98,87 @@ const PALETTES: Record<PaletteId, PaletteSpec> = {
     glowGamma: 0.85,
     floor: 0.02,
   },
+  aurora: {
+    stops: [
+      { pos: 0.0, r: 8, g: 18, b: 58 },
+      { pos: 0.3, r: 30, g: 130, b: 90 },
+      { pos: 0.6, r: 60, g: 220, b: 220 },
+      { pos: 1.0, r: 200, g: 160, b: 240 },
+    ],
+    glowGamma: 0.85,
+    floor: 0.025,
+  },
+  nebula: {
+    stops: [
+      { pos: 0.0, r: 10, g: 18, b: 40 },
+      { pos: 0.35, r: 130, g: 50, b: 150 },
+      { pos: 0.7, r: 240, g: 130, b: 90 },
+      { pos: 1.0, r: 255, g: 230, b: 200 },
+    ],
+    glowGamma: 0.8,
+    floor: 0.03,
+  },
+  sakura: {
+    stops: [
+      { pos: 0.0, r: 60, g: 18, b: 38 },
+      { pos: 0.4, r: 230, g: 130, b: 180 },
+      { pos: 0.75, r: 250, g: 215, b: 220 },
+      { pos: 1.0, r: 255, g: 245, b: 250 },
+    ],
+    glowGamma: 0.95,
+    floor: 0.03,
+  },
+  twilight: {
+    stops: [
+      { pos: 0.0, r: 28, g: 20, b: 60 },
+      { pos: 0.4, r: 160, g: 60, b: 150 },
+      { pos: 0.75, r: 245, g: 150, b: 90 },
+      { pos: 1.0, r: 255, g: 220, b: 195 },
+    ],
+    glowGamma: 0.85,
+    floor: 0.03,
+  },
+  moss: {
+    stops: [
+      { pos: 0.0, r: 14, g: 26, b: 20 },
+      { pos: 0.35, r: 60, g: 110, b: 50 },
+      { pos: 0.7, r: 170, g: 195, b: 100 },
+      { pos: 1.0, r: 245, g: 235, b: 190 },
+    ],
+    glowGamma: 0.9,
+    floor: 0.025,
+  },
+  copper: {
+    stops: [
+      { pos: 0.0, r: 30, g: 14, b: 8 },
+      { pos: 0.35, r: 130, g: 60, b: 30 },
+      { pos: 0.7, r: 220, g: 130, b: 70 },
+      { pos: 1.0, r: 250, g: 220, b: 180 },
+    ],
+    glowGamma: 0.85,
+    floor: 0.035,
+  },
+  mercury: {
+    stops: [
+      { pos: 0.0, r: 12, g: 16, b: 24 },
+      { pos: 0.4, r: 80, g: 100, b: 120 },
+      { pos: 0.75, r: 185, g: 200, b: 215 },
+      { pos: 1.0, r: 235, g: 245, b: 255 },
+    ],
+    glowGamma: 1.0,
+    floor: 0.02,
+  },
+  opal: {
+    stops: [
+      { pos: 0.0, r: 42, g: 12, b: 68 },
+      { pos: 0.3, r: 50, g: 130, b: 184 },
+      { pos: 0.55, r: 145, g: 220, b: 190 },
+      { pos: 0.8, r: 240, g: 200, b: 210 },
+      { pos: 1.0, r: 250, g: 240, b: 220 },
+    ],
+    glowGamma: 0.85,
+    floor: 0.025,
+  },
 }
 
 function lerpStops(stops: ColorStop[], t: number): [number, number, number] {
@@ -151,11 +232,19 @@ export function paletteGlowGamma(id: PaletteId): number {
 
 export const PALETTE_IDS: readonly PaletteId[] = [
   'cosmic',
+  'nebula',
+  'aurora',
+  'twilight',
   'neon',
-  'monochrome',
-  'gold',
   'ultraviolet',
+  'opal',
   'bioluminescent',
-  'ember',
   'deepsea',
+  'mercury',
+  'monochrome',
+  'moss',
+  'sakura',
+  'ember',
+  'copper',
+  'gold',
 ]

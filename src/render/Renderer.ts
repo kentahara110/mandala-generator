@@ -113,7 +113,10 @@ export class Renderer {
     const spiral = plan.spiral
     const petals = plan.petals
     const palette = state.color.palette
-    const hueShift = state.color.hueShift
+    // Apply automatic colour drift: cycleSpeed > 0 rotates hueShift over time
+    // so the mandala slowly cycles through the palette without user input.
+    const cycleSpeed = state.color.cycleSpeed ?? 0
+    const hueShift = state.color.hueShift + (cycleSpeed > 0 ? time * cycleSpeed * 0.07 : 0)
     const saturation = state.rendering.saturation
     const thickness = Math.max(0.5, state.rendering.thickness)
     const glow = state.rendering.glow
