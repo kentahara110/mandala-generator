@@ -7,6 +7,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Google Fonts — pinned so every visitor sees the same typography.
+         Inter covers Latin UI text (close to SF Pro / system stack we had
+         before), Noto Sans JP covers Japanese glyphs the browser will
+         automatically swap in for kana/kanji, and JetBrains Mono is used
+         for the Seed code chip. `display=swap` shows fallback text first
+         so the UI never flashes blank while fonts download. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
     <title>Generative Mandala Laboratory</title>
     <style>
       html, body, #root {
@@ -16,7 +30,15 @@
         width: 100%;
         background: #07060c;
         color: #d7d3e8;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        /* Unified typography: Inter for Latin, Noto Sans JP for Japanese.
+           Browsers swap in the JP face automatically for kana/kanji that
+           Inter doesn't cover. The trailing system fonts are last-resort
+           fallbacks while the webfonts are downloading. */
+        font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        font-feature-settings: 'cv02', 'cv11', 'ss01';
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
         /* Default to hidden so the desktop layout doesn't scroll. The
            immersive toggle handler temporarily relaxes this to give iOS
            a scroll-trick fallback for hiding the URL bar. */
