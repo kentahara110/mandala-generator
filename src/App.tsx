@@ -14,7 +14,7 @@ import { Section } from './components/Section'
 import { PALETTE_IDS } from './render/Palettes'
 import { translations, loadLang, persistLang, type Lang } from './i18n'
 
-type SectionId = 'engine' | 'structure' | 'motion' | 'params' | 'rendering' | 'color' | 'discover' | 'save'
+type SectionId = 'engine' | 'structure' | 'motion' | 'params' | 'rendering' | 'color' | 'save'
 
 export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -343,14 +343,8 @@ export const App: React.FC = () => {
     repaint()
   }, [repaint])
 
-  // Variation — preserve colours / structure / motion, but nudge the
-  // engine's internal coefficients enough that the change is *visible*.
-  const mutateSlightly = useCallback(() => {
-    const engine = engineRef.current
-    if (!engine) return
-    engine.mutate(0.7)
-    rendererRef.current?.clear()
-  }, [])
+  // (The Variation/Mutate button was removed from the UI — kept the
+  // underlying engine.mutate() API available for future use.)
 
   const exportPng = useCallback(() => {
     const renderer = rendererRef.current
@@ -602,26 +596,6 @@ export const App: React.FC = () => {
         </Section>
 
         <Section
-          title={t.sectionDiscover}
-          open={openSections.has('discover')}
-          onToggle={() => toggleSection('discover')}
-        >
-          {/* <button className="btn primary full" onClick={mutateSlightly}>
-            {t.mutateSlightly}
-          </button>
-          <div className="help-text">
-            {t.mutateHelp}
-          </div> */}
-          <div style={{ height: 10 }} />
-          <button className="btn primary full" onClick={randomize}>
-            {t.shuffleAll}
-          </button>
-          <div className="help-text">
-            {t.shuffleHelp}
-          </div>
-        </Section>
-
-        <Section
           title={t.sectionSave}
           open={openSections.has('save')}
           onToggle={() => toggleSection('save')}
@@ -637,6 +611,17 @@ export const App: React.FC = () => {
             {t.seedLabel} <code>{s.seed.toString(16).padStart(8, '0')}</code>
           </div>
         </Section>
+
+        {/* Bare Shuffle button — intentionally NOT inside an accordion so it's
+            always one tap away at the very bottom of the menu. */}
+        <div className="shuffle-bar">
+          <button className="btn primary full" onClick={randomize}>
+            {t.shuffleAll}
+          </button>
+          <div className="help-text">
+            {t.shuffleHelp}
+          </div>
+        </div>
       </div>
 
       </div>{/* /.drawer-container */}

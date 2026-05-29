@@ -620,6 +620,16 @@ canvas.mandala {
   letter-spacing: 0.03em;
 }
 
+/* Bare Shuffle bar — anchored at the very bottom of the right panel,
+   outside of any accordion section. Gets a subtle top divider so it reads
+   as a separate, always-visible action rather than part of the section
+   stack above it. */
+.shuffle-bar {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(120, 100, 200, 0.18);
+}
+
 /* Language switcher — sits at the very top of the left panel and is
    always visible (never folded into an accordion). */
 .lang-switch {

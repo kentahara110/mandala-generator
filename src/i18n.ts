@@ -131,7 +131,7 @@ const ja: Translations = {
   glow: '発光',             glowHint: '発光の強さ',
   fade: '残像',         fadeHint: '残像の持続',
   thickness: '線の太さ',        thicknessHint: '点や線の太さ',
-  bloom: 'ブルーム',         bloomHint: '光のにじむような幻想感',
+  bloom: 'ブルーム',         bloomHint: '光のにじみ',
   saturation: '彩度',       saturationHint: '色の鮮やかさ',
 
   hueShift: '色相シフト',   hueShiftHint: 'パレットの色相を動かす',
