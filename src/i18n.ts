@@ -97,12 +97,12 @@ const ja: Translations = {
   engineHelp: 'それぞれのエンジンが、異なる「夢の見方」をします。',
 
   engines: {
-    clifford: { label: 'Clifford', tagline: '絹のような糸' },
-    dejong:   { label: 'De Jong',  tagline: '織りなされる帳' },
+    clifford: { label: 'Clifford', tagline: '絹の漂い' },
+    dejong:   { label: 'De Jong',  tagline: '織りなされるヴェール' },
     lorenz:   { label: 'Lorenz',   tagline: '蝶の波' },
-    flow:     { label: 'Flow',     tagline: '極の流れ' },
-    reaction: { label: 'Reaction', tagline: '生きた珊瑚' },
-    lsystem:  { label: 'L-System', tagline: '枝分かれする文法' },
+    flow:     { label: 'Flow',     tagline: '星の流れ' },
+    reaction: { label: 'Reaction', tagline: '珊瑚のダンス' },
+    lsystem:  { label: 'L-System', tagline: '生命の木' },
     flame:    { label: 'Flame',    tagline: '燃える残光' },
   },
 
