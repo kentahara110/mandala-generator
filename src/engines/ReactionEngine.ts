@@ -35,9 +35,35 @@ export class ReactionEngine extends BaseEngine {
 
   randomize(seed?: number): void {
     super.randomize(seed)
+    // Clamp Gray-Scott parameters into stable ranges. The base randomize
+    // applies ±~0.015 gaussian noise to every internal key; for tiny F or
+    // for already-low k presets that noise can push the parameters into
+    // unstable regimes that decay to nothing or blow up to NaN.
+    const clamp = (v: number, lo: number, hi: number) =>
+      Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : (lo + hi) / 2
+    this.internal.F = clamp(this.internal.F, 0.012, 0.045)
+    this.internal.k = clamp(this.internal.k, 0.042, 0.068)
+    this.internal.Du = clamp(this.internal.Du, 0.13, 0.20)
+    this.internal.Dv = clamp(this.internal.Dv, 0.05, 0.10)
+    this.internal.scale = clamp(this.internal.scale, 1.2, 1.9)
     this.reseedGrid()
     // Pre-evolve so the pattern is already mature when the user lands on it.
     for (let i = 0; i < 600; i++) this.step()
+    // If the pre-evolve produced a dead pattern (everything below threshold),
+    // fall back to a known-good preset so the user never sees an empty canvas.
+    let max = 0
+    for (let i = 0; i < this.v.length; i++) {
+      const vv = this.v[i]
+      if (Number.isFinite(vv) && vv > max) max = vv
+    }
+    if (!Number.isFinite(max) || max < 0.1) {
+      this.internal.F = 0.0367
+      this.internal.k = 0.0649
+      this.internal.Du = 0.16
+      this.internal.Dv = 0.08
+      this.reseedGrid()
+      for (let i = 0; i < 600; i++) this.step()
+    }
   }
 
   private reseedGrid(): void {

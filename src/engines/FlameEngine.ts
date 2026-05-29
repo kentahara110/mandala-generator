@@ -122,7 +122,10 @@ export class FlameEngine extends BaseEngine {
   }
 
   private currentFlame(): { transforms: Affine[] } {
-    const idx = Math.floor(this.internal.flameIndex) % FLAMES.length
+    // Positive-safe modulo — see LSystemEngine for the same reasoning.
+    const raw = this.internal.flameIndex
+    const rawFloor = Number.isFinite(raw) ? Math.floor(raw) : 0
+    const idx = ((rawFloor % FLAMES.length) + FLAMES.length) % FLAMES.length
     const base = FLAMES[idx]
     const transforms: Affine[] = base.transforms.map((t, ti) => ({
       a: this.internal[`t${ti}_a`] ?? t.a,

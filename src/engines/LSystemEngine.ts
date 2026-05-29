@@ -62,7 +62,13 @@ export class LSystemEngine extends BaseEngine {
   }
 
   private buildCache(): number[] {
-    const idx = Math.floor(this.internal.ruleIndex) % RULES.length
+    // Positive-safe modulo — base randomize() perturbs every internal field
+    // by ±~0.015, which can land ruleIndex at -0.01 → Math.floor → -1 →
+    // RULES[-1] would be undefined and the engine would throw, leaving the
+    // canvas stuck blank. Clamp into [0, RULES.length).
+    const raw = this.internal.ruleIndex
+    const rawFloor = Number.isFinite(raw) ? Math.floor(raw) : 0
+    const idx = ((rawFloor % RULES.length) + RULES.length) % RULES.length
     if (this.cachedIndex === idx && this.cached[idx]) return this.cached[idx]
     const rule = RULES[idx]
     const expanded = this.expandRule(rule)

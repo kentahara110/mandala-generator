@@ -421,7 +421,7 @@ export const App: React.FC = () => {
             onChange={(v) => update((s) => { s.rendering.glow = v })} />
           <Slider label="Fade" value={s.rendering.fade} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.fade = v })} />
-          <Slider label="Thickness" value={s.rendering.thickness} min={0.5} max={3} step={0.1}
+          <Slider label="Thickness" value={s.rendering.thickness} min={0.5} max={1.5} step={0.05}
             onChange={(v) => update((s) => { s.rendering.thickness = v })} />
           <Slider label="Bloom" value={s.rendering.bloom} min={0} max={1}
             onChange={(v) => update((s) => { s.rendering.bloom = v })} />
