@@ -284,7 +284,7 @@ export const App: React.FC = () => {
         onClick={() => setDrawerOpen((v) => !v)}
         aria-label="Toggle controls drawer"
       >
-        ☰
+        <span className="icon icon-hamburger" />
       </button>
       <div
         className="drawer-backdrop"
@@ -372,7 +372,7 @@ export const App: React.FC = () => {
           aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
           title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
         >
-          {immersive ? '✕' : '⛶'}
+          <span className={`icon ${immersive ? 'icon-close' : 'icon-expand'}`} />
         </button>
         <canvas ref={canvasRef} className="mandala" />
       </div>
@@ -433,7 +433,7 @@ export const App: React.FC = () => {
           </div>
           <div style={{ height: 10 }} />
           <button className="btn shuffle full" onClick={randomize}>
-            Shuffle All
+            ✦ Shuffle All
           </button>
           <div className="help-text">
             Randomizes every unlocked section. There's no undo.

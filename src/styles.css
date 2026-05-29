@@ -50,6 +50,88 @@ html, body, #root {
   background: rgba(40, 30, 70, 0.85);
   border-color: var(--accent);
 }
+
+/* ---------- CSS-only icons used inside .chrome-btn ----------
+   All three glyphs are drawn with currentColor so they inherit the button
+   text colour and stay crisp at any size. No unicode characters, no SVG. */
+
+.icon {
+  display: inline-block;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+/* Hamburger — three rounded horizontal lines. Top/bottom via pseudo
+   elements, middle bar via the element's own background-image gradient
+   centred vertically. */
+.icon-hamburger {
+  width: 17px;
+  height: 13px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 1.8px;
+  border-radius: 1px;
+}
+.icon-hamburger::before,
+.icon-hamburger::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.8px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.icon-hamburger::before { top: 0; }
+.icon-hamburger::after  { bottom: 0; }
+
+/* Expand — four L-shaped corner brackets drawn as 8 linear-gradient
+   backgrounds (one horizontal + one vertical bar per corner). */
+.icon-expand {
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  background-image:
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position:
+    top    left,  top    left,
+    top    right, top    right,
+    bottom left,  bottom left,
+    bottom right, bottom right;
+  background-size:
+    6px 1.8px, 1.8px 6px,
+    6px 1.8px, 1.8px 6px,
+    6px 1.8px, 1.8px 6px,
+    6px 1.8px, 1.8px 6px;
+  border-radius: 1px;
+}
+
+/* Close — two crossing rounded strokes. */
+.icon-close {
+  width: 16px;
+  height: 16px;
+}
+.icon-close::before,
+.icon-close::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 1.8px;
+  background: currentColor;
+  border-radius: 1px;
+  transform-origin: center;
+}
+.icon-close::before { transform: translate(-50%, -50%) rotate(45deg); }
+.icon-close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
 .drawer-toggle {
   position: fixed;
   top: 12px;
@@ -339,19 +421,20 @@ canvas.mandala {
 .btn.primary:hover {
   background: linear-gradient(135deg, rgba(184, 156, 255, 0.4), rgba(120, 100, 200, 0.2));
 }
-/* Randomize-style action — distinct enough that users won't click it by
-   accident, but still palette-friendly. Warm desaturated amber rather than
-   alarm-red. */
+/* Randomize-style action — distinct from neutral buttons so users notice
+   it before clicking, but palette-friendly. Soft dusty rose blending into
+   the accent purple so it harmonises with the rest of the UI. */
 .btn.shuffle {
-  background: linear-gradient(135deg, rgba(184, 156, 255, 0.25), rgba(120, 100, 200, 0.12));
-  border-color: var(--accent);
-  color: var(--text);
+  background: linear-gradient(135deg, rgba(232, 152, 188, 0.22), rgba(168, 130, 200, 0.14));
+  border-color: rgba(232, 152, 188, 0.55);
+  color: #f3cad9;
   font-weight: 600;
   letter-spacing: 0.1em;
 }
 .btn.shuffle:hover {
-  background: linear-gradient(135deg, rgba(184, 156, 255, 0.4), rgba(120, 100, 200, 0.2));
-  box-shadow: 0 0 14px rgba(208, 168, 122, 0.18);
+  background: linear-gradient(135deg, rgba(242, 168, 200, 0.34), rgba(184, 144, 214, 0.24));
+  border-color: rgba(245, 178, 208, 0.85);
+  box-shadow: 0 0 14px rgba(232, 152, 188, 0.22);
 }
 .btn.full { width: 100%; }
 
@@ -532,7 +615,7 @@ canvas.mandala {
     left: 0;
     /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
        (≥ 160px) and never wastes space on iPad (≤ 300px). */
-    width: clamp(160px, 40vw, 300px);
+    width: clamp(160px, 45vw, 300px);
     z-index: 100;
     transform: translateX(-105%);
     transition: transform 0.28s ease;
@@ -599,17 +682,18 @@ canvas.mandala {
     font-size: 9.5px;
     margin-bottom: 4px;
   }
-  /* Bigger slider thumb on touch so users can grab it without precision. */
+  /* Touch: hit area stays generous (30px tall input) but the visible thumb
+     itself stays small so it doesn't feel chunky. */
   .slider-row input[type=range] {
     height: 30px;
   }
   .slider-row input[type=range]::-webkit-slider-thumb {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
   }
   .slider-row input[type=range]::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
   }
   /* Lock toggle slightly more tappable on compact. */
 
