@@ -612,16 +612,20 @@ canvas.mandala {
     position: fixed;
     top: 0;
     bottom: 0;
-    left: 0;
+    /* Anchor the drawer to the RIGHT edge of the viewport — easier thumb
+       reach on phones held in the right hand. The hamburger trigger stays
+       on the left as the user asked. */
+    left: auto;
+    right: 0;
     /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
        (≥ 160px) and never wastes space on iPad (≤ 300px). */
-    width: clamp(160px, 45vw, 300px);
+    width: clamp(160px, 48vw, 300px);
     z-index: 100;
-    transform: translateX(-105%);
+    transform: translateX(105%);
     transition: transform 0.28s ease;
     background: rgba(14, 10, 24, 0.94);
-    border-right: 1px solid var(--panel-border);
-    border-left: none;
+    border-right: none;
+    border-left: 1px solid var(--panel-border);
     padding: 56px 14px 80px;
     overflow-y: auto;
   }
@@ -682,10 +686,18 @@ canvas.mandala {
     font-size: 9.5px;
     margin-bottom: 4px;
   }
-  /* Touch: hit area stays generous (30px tall input) but the visible thumb
-     itself stays small so it doesn't feel chunky. */
+  /* Touch: widen the hit area to ~40px (close to Apple's 44px recommended
+     touch target) while keeping the visible thumb at 16px so it doesn't
+     feel chunky. The visible 4px track stays vertically centred via the
+     background-image rule on the base style. */
   .slider-row input[type=range] {
-    height: 30px;
+    height: 40px;
+    margin: 0;
+  }
+  .slider-row {
+    /* Pull the row's own margin in slightly because the input is taller
+       now; otherwise stacks of sliders feel airy. */
+    margin-bottom: 8px;
   }
   .slider-row input[type=range]::-webkit-slider-thumb {
     width: 16px;
