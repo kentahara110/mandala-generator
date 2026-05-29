@@ -162,7 +162,7 @@ html, body, #root {
 }
 .immersive-toggle {
   position: absolute;
-  bottom: 16px;
+  top: 16px;
   right: 16px;
 }
 
@@ -198,11 +198,25 @@ html, body, #root {
      the (square) canvas is seamless — the whole viewport reads as one
      uniform dark field. */
   background: #07060c;
+  /* Anchor the whole app to the visual viewport. This is the cornerstone
+     of the iOS URL-bar-hide trick: when the body is allowed to scroll
+     (so iOS will collapse its chrome), this fixed overlay keeps the actual
+     UI rock-still on top — the user never sees the underlying scroll. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* dvh = dynamic viewport height: tracks the *visible* viewport, so when
+     iOS finally collapses the URL bar the canvas-wrap grows into the space
+     instead of leaving a black band at the bottom. */
+  height: 100dvh;
+  width: 100vw;
 }
 .app.immersive .canvas-wrap {
   padding: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background: #07060c;
 }
 
@@ -229,6 +243,12 @@ html:-webkit-full-screen {
      doesn't break the meditative atmosphere. */
   opacity: 0.4;
   background: rgba(15, 10, 25, 0.4);
+  /* Anchor the close (X) at the TOP-RIGHT corner regardless of where the
+     enter-immersive button lives on compact. Important enough to use
+     !important so it wins over the compact media-query override. */
+  top: 16px;
+  right: 16px;
+  left: auto;
 }
 .app.immersive .immersive-toggle:hover {
   opacity: 1;
@@ -632,6 +652,21 @@ canvas.mandala {
   cursor: pointer;
   padding: 0;
   text-align: left;
+  /* Kill every default tap / focus visual so opening a section on touch
+     doesn't flash a white highlight, a focus ring, or a bottom underline. */
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+}
+.section-toggle:focus,
+.section-toggle:focus-visible,
+.section-toggle:active,
+.section-toggle:hover {
+  outline: none;
+  background: none;
+  box-shadow: none;
 }
 .section-toggle .subtitle {
   /* Reset the .subtitle margin inside the toggle so the header row hugs
@@ -708,9 +743,6 @@ canvas.mandala {
   .section-toggle {
     padding: 10px 0;
     -webkit-tap-highlight-color: transparent;
-  }
-  .section-toggle:active .subtitle {
-    color: var(--accent);
   }
   /* Tighten section spacing in the drawer — collapsed sections shouldn't
      have the same airy padding as desktop. */
