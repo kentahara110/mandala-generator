@@ -724,8 +724,9 @@ canvas.mandala {
     right: 14px;
   }
   .immersive-toggle {
-    bottom: 3%;
-    right: 14px;
+    top: 14px;
+    left: 14px;
+    right: unset;
   }
   /* Drawer-container is now the single scrollable drawer that contains
      BOTH panels. Anchored to the right edge so phones held in the right
