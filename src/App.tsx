@@ -13,6 +13,7 @@ import { PaletteGrid } from './components/PaletteGrid'
 import { Section } from './components/Section'
 import { PALETTE_IDS } from './render/Palettes'
 import { translations, loadLang, persistLang, type Lang } from './i18n'
+import { Analytics } from '@vercel/analytics/react'
 
 type SectionId = 'engine' | 'structure' | 'motion' | 'params' | 'rendering' | 'color' | 'save'
 
@@ -640,6 +641,7 @@ export const App: React.FC = () => {
       </div>
 
       </div>{/* /.drawer-container */}
+      <Analytics />
     </div>
   )
 }
