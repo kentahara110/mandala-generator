@@ -274,7 +274,7 @@ html:-webkit-full-screen {
 }
 
 .subtitle {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -600,7 +600,7 @@ canvas.mandala {
 .section {
   border-top: 1px solid rgba(120, 100, 200, 0.1);
   padding-top: 14px;
-  margin-top: 14px;
+  margin-top: 24px;
 }
 .section:first-child {
   border-top: none;
@@ -706,7 +706,7 @@ canvas.mandala {
     display: none;
   }
   .section-toggle {
-    padding: 6px 0;
+    padding: 10px 0;
     -webkit-tap-highlight-color: transparent;
   }
   .section-toggle:active .subtitle {
@@ -740,7 +740,7 @@ canvas.mandala {
     right: 0;
     /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
        (≥ 160px) and never wastes space on iPad (≤ 320px). */
-    width: clamp(200px, 52vw, 320px);
+    width: clamp(200px, 58vw, 320px);
     z-index: 100;
     transform: translateX(105%);
     transition: transform 0.28s ease;
