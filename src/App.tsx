@@ -343,11 +343,12 @@ export const App: React.FC = () => {
     repaint()
   }, [repaint])
 
-  // Slight mutation — preserve everything, only nudge engine internals.
+  // Variation — preserve colours / structure / motion, but nudge the
+  // engine's internal coefficients enough that the change is *visible*.
   const mutateSlightly = useCallback(() => {
     const engine = engineRef.current
     if (!engine) return
-    engine.mutate(0.3)
+    engine.mutate(0.7)
     rendererRef.current?.clear()
   }, [])
 
@@ -605,14 +606,14 @@ export const App: React.FC = () => {
           open={openSections.has('discover')}
           onToggle={() => toggleSection('discover')}
         >
-          <button className="btn primary full" onClick={mutateSlightly}>
+          {/* <button className="btn primary full" onClick={mutateSlightly}>
             {t.mutateSlightly}
           </button>
           <div className="help-text">
             {t.mutateHelp}
-          </div>
+          </div> */}
           <div style={{ height: 10 }} />
-          <button className="btn shuffle full" onClick={randomize}>
+          <button className="btn primary full" onClick={randomize}>
             {t.shuffleAll}
           </button>
           <div className="help-text">

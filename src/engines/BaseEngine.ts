@@ -57,18 +57,23 @@ export abstract class BaseEngine implements GeneratorEngine {
     }
   }
 
-  // Small, beauty-preserving mutation. We perturb internal coefficients
-  // by a tiny gaussian step, then re-anchor toward the *nearest* curated
-  // preset so the result drifts inside the curated manifold.
+  // Beauty-preserving mutation. We perturb internal coefficients with a
+  // gaussian step, then very lightly re-anchor toward the *nearest* curated
+  // preset so the result stays inside the curated manifold without
+  // collapsing back to the same point. The step has been tuned so a
+  // mutation is *visible* on a single click — earlier settings produced
+  // changes too subtle for users to notice.
   mutate(amount: number): void {
-    const step = clamp(amount, 0, 1) * 0.06
+    const a = clamp(amount, 0, 1)
+    const step = a * 0.14
     for (const k of Object.keys(this.internal)) {
       this.internal[k] += this.rng.normal(0, step)
     }
-    // Soft re-anchor toward nearest preset.
+    // Re-anchor toward nearest preset, but only weakly — enough to keep
+    // wild divergence in check, not enough to undo the variation.
     const anchor = this.nearestPreset()
     if (anchor) {
-      const pull = 0.15 * clamp(amount, 0, 1)
+      const pull = 0.05 * a
       for (const k of Object.keys(this.internal)) {
         const target = anchor.internal[k] ?? this.internal[k]
         this.internal[k] = lerp(this.internal[k], target, pull)

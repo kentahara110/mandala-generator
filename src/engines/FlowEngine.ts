@@ -35,6 +35,23 @@ export class FlowEngine extends BaseEngine {
     this.respawnAll()
   }
 
+  mutate(amount: number): void {
+    super.mutate(amount)
+    // Refresh half the agents so the new noise / swirl coefficients
+    // immediately show in the flow field instead of being masked by trails
+    // from the previous parameters.
+    const rng = new Rng((this.seed ^ 0xb2) >>> 0)
+    const half = AGENT_COUNT >> 1
+    for (let i = 0; i < half; i++) {
+      const idx = (rng.next() * AGENT_COUNT) | 0
+      const r = Math.sqrt(rng.next()) * 1.6
+      const a = rng.next() * Math.PI * 2
+      this.ax[idx] = Math.cos(a) * r
+      this.ay[idx] = Math.sin(a) * r
+      this.ah[idx] = rng.next()
+    }
+  }
+
   private respawnAll(): void {
     const rng = new Rng(this.seed ^ 0xa1)
     for (let i = 0; i < AGENT_COUNT; i++) {

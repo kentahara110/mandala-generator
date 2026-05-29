@@ -511,7 +511,7 @@ canvas.mandala {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5px;
-  margin-bottom: 8px;
+  margin-bottom: 22px;
 }
 .palette-chip {
   height: 30px;

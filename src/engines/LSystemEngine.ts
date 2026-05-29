@@ -129,6 +129,20 @@ export class LSystemEngine extends BaseEngine {
     this.cachedIndex = -1
   }
 
+  mutate(amount: number): void {
+    super.mutate(amount)
+    // At higher amounts, occasionally hop to a neighbouring rule so the
+    // user sees a clear structural change, not just a subtle angle drift.
+    if (amount >= 0.5 && this.rng.next() < 0.4) {
+      const delta = this.rng.next() < 0.5 ? -1 : 1
+      this.internal.ruleIndex = Math.floor(this.internal.ruleIndex) + delta
+    }
+    // The cached point cloud uses the old ruleIndex/angle — drop it so
+    // sample() rebuilds with the mutated coefficients.
+    this.cached = []
+    this.cachedIndex = -1
+  }
+
   sample(buffer: PointBuffer, ctx: EngineContext): number {
     const pts = this.buildCache()
     const n = buffer.xs.length

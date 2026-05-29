@@ -33,6 +33,24 @@ export class ReactionEngine extends BaseEngine {
     this.randomize(seed)
   }
 
+  mutate(amount: number): void {
+    super.mutate(amount)
+    // After mutating F/k/Du/Dv, the existing grid evolves under the new
+    // dynamics — but the visible change is slow because it carries decades
+    // of "old" pattern. Reseed and warm-up so the user sees the new
+    // chemistry immediately. We use fewer warm-up steps than `randomize`
+    // so the pattern isn't fully re-cooked — it still feels like a
+    // variation, not a brand-new mandala.
+    const clamp = (v: number, lo: number, hi: number) =>
+      Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : (lo + hi) / 2
+    this.internal.F = clamp(this.internal.F, 0.012, 0.045)
+    this.internal.k = clamp(this.internal.k, 0.042, 0.068)
+    this.internal.Du = clamp(this.internal.Du, 0.13, 0.20)
+    this.internal.Dv = clamp(this.internal.Dv, 0.05, 0.10)
+    this.reseedGrid()
+    for (let i = 0; i < 350; i++) this.step()
+  }
+
   randomize(seed?: number): void {
     super.randomize(seed)
     // Clamp Gray-Scott parameters into stable ranges. The base randomize
