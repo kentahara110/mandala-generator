@@ -176,19 +176,28 @@ export const App: React.FC = () => {
     // -----------------------------------------------------------------
     const html = document.documentElement
     const body = document.body
+    // The URL-bar-hide scroll trick is ONLY useful on mobile / tablet —
+    // desktop browsers don't auto-hide chrome on scroll, so running the
+    // trick there does nothing but expose a vertical scrollbar. Skip it
+    // entirely above the compact breakpoint.
+    const compactVp = window.innerWidth < 1024
     if (goingIn) {
-      html.style.overflow = 'auto'
-      body.style.overflow = 'auto'
-      body.style.minHeight = 'calc(100dvh + 1px)'
-      // Two RAF kicks: first to give the layout time to update with the new
-      // body height, second to actually scroll.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => window.scrollTo(0, 1))
-      })
+      if (compactVp) {
+        html.style.overflow = 'auto'
+        body.style.overflow = 'auto'
+        body.style.minHeight = 'calc(100dvh + 1px)'
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => window.scrollTo(0, 1))
+        })
+      }
+      // Tag <html> so CSS can hide whatever scrollbar lingers (e.g. on
+      // compact while the trick is active). The class is removed on exit.
+      html.classList.add('is-immersive')
     } else {
       html.style.overflow = ''
       body.style.overflow = ''
       body.style.minHeight = ''
+      html.classList.remove('is-immersive')
       window.scrollTo(0, 0)
     }
     setImmersive(goingIn)

@@ -18,6 +18,24 @@ html, body, #root {
   color: var(--text);
 }
 
+/* Hide every scrollbar while the app is in immersive mode. On mobile we
+   intentionally leave the body scrollable so iOS will collapse the URL
+   bar — but the user shouldn't actually *see* a scrollbar, since there's
+   nothing meaningful to scroll to. On desktop the body isn't scrolled at
+   all (we skip the scroll trick above the compact breakpoint) so this
+   guarantees a clean, chrome-free view. */
+html.is-immersive,
+html.is-immersive body {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* legacy Edge / IE */
+}
+html.is-immersive::-webkit-scrollbar,
+html.is-immersive body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Inline monospace (used for the Seed chip in the Save section). Pinned
    to the Google Font so the look stays identical across environments. */
 code, kbd, samp {
