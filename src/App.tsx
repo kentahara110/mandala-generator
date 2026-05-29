@@ -52,17 +52,76 @@ export const App: React.FC = () => {
   }, [immersive, drawerOpen])
 
   const toggleImmersive = useCallback(() => {
-    setImmersive((v) => {
-      const next = !v
-      // Best-effort browser fullscreen — silently ignored if denied.
-      if (next && document.documentElement.requestFullscreen && !document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {})
-      } else if (!next && document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => {})
+    // Compute next state from the latest ref-style snapshot via state callback
+    // so we don't need `immersive` in this callback's dep array.
+    setImmersive((current) => {
+      const next = !current
+      // Best-effort browser fullscreen so mobile browsers hide their chrome
+      // (URL bar, navigation buttons) — same UX as YouTube fullscreen.
+      // Vendor-prefixed fallback supports older Safari (< iOS 16.4) where
+      // standard requestFullscreen on a non-video element isn't available.
+      try {
+        const el = document.documentElement as HTMLElement & {
+          webkitRequestFullscreen?: () => Promise<void>
+          webkitRequestFullScreen?: () => void
+          mozRequestFullScreen?: () => Promise<void>
+          msRequestFullscreen?: () => Promise<void>
+        }
+        const doc = document as Document & {
+          webkitFullscreenElement?: Element | null
+          webkitExitFullscreen?: () => Promise<void>
+          webkitCancelFullScreen?: () => void
+          mozCancelFullScreen?: () => Promise<void>
+          msExitFullscreen?: () => Promise<void>
+        }
+        const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
+        if (next && !inFs) {
+          const req =
+            el.requestFullscreen ||
+            el.webkitRequestFullscreen ||
+            el.webkitRequestFullScreen ||
+            el.mozRequestFullScreen ||
+            el.msRequestFullscreen
+          const result = req?.call(el)
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            ;(result as Promise<void>).catch(() => {})
+          }
+        } else if (!next && inFs) {
+          const exit =
+            doc.exitFullscreen ||
+            doc.webkitExitFullscreen ||
+            doc.webkitCancelFullScreen ||
+            doc.mozCancelFullScreen ||
+            doc.msExitFullscreen
+          const result = exit?.call(doc)
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            ;(result as Promise<void>).catch(() => {})
+          }
+        }
+      } catch {
+        // ignore — immersive still works in-page even if the FS API rejects.
       }
       return next
     })
     setDrawerOpen(false)
+  }, [])
+
+  // Keep our `immersive` state in sync if the user exits browser fullscreen
+  // via a system gesture (Escape, swipe down, or the browser's own UI).
+  useEffect(() => {
+    const onChange = () => {
+      const doc = document as Document & { webkitFullscreenElement?: Element | null }
+      const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
+      if (!inFs) {
+        setImmersive((current) => (current ? false : current))
+      }
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    document.addEventListener('webkitfullscreenchange', onChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      document.removeEventListener('webkitfullscreenchange', onChange)
+    }
   }, [])
 
   // Initialize engine + renderer.
@@ -291,6 +350,31 @@ export const App: React.FC = () => {
         onClick={() => setDrawerOpen(false)}
       />
 
+      {/* CENTER — canvas (kept OUTSIDE the drawer-container so on compact
+          it stays as the page background while the drawer slides over it). */}
+      <div className="canvas-wrap">
+        <div className="brand">
+          Generative Mandala Laboratory
+          <span className="dim">
+            {ENGINES.find((e) => e.id === s.engine)?.label} · seed {s.seed.toString(16).padStart(8, '0')}
+          </span>
+        </div>
+        <button
+          className="chrome-btn immersive-toggle"
+          onClick={toggleImmersive}
+          aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
+          title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
+        >
+          <span className={`icon ${immersive ? 'icon-close' : 'icon-expand'}`} />
+        </button>
+        <canvas ref={canvasRef} className="mandala" />
+      </div>
+
+      {/* On desktop the wrapper is `display: contents` so the grid sees the
+          two panels directly. On compact it becomes the single scrollable
+          drawer that contains both panels stacked vertically. */}
+      <div className="drawer-container">
+
       {/* LEFT PANEL — engines + structure + motion */}
       <div className="panel">
         <div className="section">
@@ -356,25 +440,6 @@ export const App: React.FC = () => {
           <Slider label="Organic" hint="Organic noise strength" value={s.params.organic} min={0} max={1}
             onChange={(v) => update((s) => { s.params.organic = v })} />
         </div>
-      </div>
-
-      {/* CENTER — canvas */}
-      <div className="canvas-wrap">
-        <div className="brand">
-          Generative Mandala Laboratory
-          <span className="dim">
-            {ENGINES.find((e) => e.id === s.engine)?.label} · seed {s.seed.toString(16).padStart(8, '0')}
-          </span>
-        </div>
-        <button
-          className="chrome-btn immersive-toggle"
-          onClick={toggleImmersive}
-          aria-label={immersive ? 'Exit immersive mode' : 'Enter immersive mode'}
-          title={immersive ? 'Exit immersive (Esc)' : 'Immersive mode'}
-        >
-          <span className={`icon ${immersive ? 'icon-close' : 'icon-expand'}`} />
-        </button>
-        <canvas ref={canvasRef} className="mandala" />
       </div>
 
       {/* RIGHT PANEL — rendering, color, actions */}
@@ -454,6 +519,8 @@ export const App: React.FC = () => {
           </div>
         </div>
       </div>
+
+      </div>{/* /.drawer-container */}
     </div>
   )
 }

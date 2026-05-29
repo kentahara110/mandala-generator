@@ -21,7 +21,29 @@ html, body, #root {
   height: 100vh;
   display: grid;
   grid-template-columns: 320px 1fr 280px;
+  /* Single full-viewport row. Without this the row auto-sizes to each grid
+     item's intrinsic content height — the panels (~750px of sections) win
+     and canvas-wrap collapses to its canvas's intrinsic size instead of
+     stretching to fill alongside the panels. */
+  grid-template-rows: 100vh;
 }
+
+/* Wrapper around the two control panels. On desktop it's a layout
+   passthrough (display: contents) so the .app grid still sees the two
+   panels as direct grid items. On compact it becomes the slide-out drawer
+   that contains both panels stacked vertically (see media query below). */
+.drawer-container {
+  display: contents;
+}
+
+/* DOM order is now canvas-wrap → panels (so the drawer wrapper can sit at
+   the end), but we want canvas in the middle column. Pin grid columns AND
+   the row explicitly — sparse auto-flow advances its cursor past col 1
+   when canvas-wrap (col 2) is placed first, so without explicit grid-row
+   the later panel (col 1) would jump down to row 2. */
+.canvas-wrap { grid-column: 2; grid-row: 1; }
+.panel { grid-column: 1; grid-row: 1; }
+.panel.right { grid-column: 3; grid-row: 1; }
 
 /* Floating chrome buttons — hamburger drawer toggle + immersive toggle.
    Drawer toggle is fixed at viewport corner (compact only). Immersive
@@ -607,41 +629,51 @@ canvas.mandala {
     top: 14px;
     right: 14px;
   }
-  .panel,
-  .panel.right {
+  /* Drawer-container is now the single scrollable drawer that contains
+     BOTH panels. Anchored to the right edge so phones held in the right
+     hand can be operated with the thumb. */
+  .drawer-container {
+    display: block;
     position: fixed;
     top: 0;
     bottom: 0;
-    /* Anchor the drawer to the RIGHT edge of the viewport — easier thumb
-       reach on phones held in the right hand. The hamburger trigger stays
-       on the left as the user asked. */
     left: auto;
     right: 0;
     /* 30–40% of viewport, clamped so the drawer is usable on iPhone SE
-       (≥ 160px) and never wastes space on iPad (≤ 300px). */
-    width: clamp(160px, 48vw, 300px);
+       (≥ 160px) and never wastes space on iPad (≤ 320px). */
+    width: clamp(180px, 48vw, 320px);
     z-index: 100;
     transform: translateX(105%);
     transition: transform 0.28s ease;
     background: rgba(14, 10, 24, 0.94);
-    border-right: none;
     border-left: 1px solid var(--panel-border);
     padding: 56px 14px 80px;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
-  .panel {
-    height: 55vh;
-    bottom: auto;
-    border-bottom: 1px solid rgba(120, 100, 200, 0.18);
+  .app.drawer-open .drawer-container {
+    transform: translateX(0);
+  }
+  /* Panels inside the unified drawer flow normally — no fixed positioning,
+     no own background/borders — letting the container hold the visual chrome. */
+  .panel,
+  .panel.right {
+    position: static;
+    width: 100%;
+    height: auto;
+    transform: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    overflow: visible;
+    /* Cancel desktop grid placement so the panels stack naturally inside
+       the drawer-container. */
+    grid-column: auto;
   }
   .panel.right {
-    top: 55vh;
-    height: 45vh;
-    padding-top: 14px;
-  }
-  .app.drawer-open .panel,
-  .app.drawer-open .panel.right {
-    transform: translateX(0);
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(120, 100, 200, 0.18);
   }
   .canvas-wrap {
     grid-column: 1;
