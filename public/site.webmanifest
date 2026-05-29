@@ -1,0 +1,13 @@
+{
+  "name": "Aurelvoid — Generative Mandala Laboratory",
+  "short_name": "Aurelvoid",
+  "description": "瞑想的なジェネレーティブマンダラを探索するインタラクティブ・アートツール。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07060c",
+  "theme_color": "#07060c",
+  "lang": "ja",
+  "categories": ["art", "design", "entertainment"]
+}

@@ -41,6 +41,18 @@ export const App: React.FC = () => {
     setLangState(next)
     persistLang(next)
   }, [])
+
+  // Keep `<html lang>` and `<title>` in sync with the chosen UI language
+  // so SEO crawlers, screen readers and browser title bars all match the
+  // visible interface.
+  useEffect(() => {
+    document.documentElement.lang = lang
+    const titles = {
+      ja: 'Aurelvoid — ジェネレーティブマンダラを漂流するアートラボ',
+      en: 'Aurelvoid — A meditative generative-mandala laboratory',
+    }
+    document.title = titles[lang]
+  }, [lang])
   // Accordion: which sections are expanded. On compact this drives visibility;
   // on desktop the CSS forces every body open regardless of this state.
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set())

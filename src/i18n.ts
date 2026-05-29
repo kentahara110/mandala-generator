@@ -82,7 +82,7 @@ export interface Translations {
 }
 
 const ja: Translations = {
-  brand: 'Generative Mandala Laboratory',
+  brand: 'Aurelvoid',
   langSwitchTitle: '言語を切り替える',
 
   sectionEngine: 'エンジン',
@@ -155,7 +155,7 @@ const ja: Translations = {
 }
 
 const en: Translations = {
-  brand: 'Generative Mandala Laboratory',
+  brand: 'Aurelvoid',
   langSwitchTitle: 'Switch language',
 
   sectionEngine: 'Engine',

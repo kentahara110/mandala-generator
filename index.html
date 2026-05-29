@@ -1,12 +1,90 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#07060c" />
+    <meta name="color-scheme" content="dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Aurelvoid" />
+    <meta name="application-name" content="Aurelvoid" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- ───────── SEO ───────── -->
+    <title>Aurelvoid — ジェネレーティブマンダラを漂流するアートラボ</title>
+    <meta
+      name="description"
+      content="Aurelvoid（オーレルヴォイド）は、瞑想的なジェネレーティブマンダラを探索するインタラクティブ・アートツール。7 つの数理エンジンと 16 のカラーパレットから、無限の万華鏡が生まれます。"
+    />
+    <meta
+      name="keywords"
+      content="Aurelvoid, mandala, generative art, ジェネレーティブアート, マンダラ, 万華鏡, 瞑想, meditation, fractal, attractor, chaos, kaleidoscope, web art, creative coding"
+    />
+    <meta name="author" content="Aurelvoid" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://aurelvoid.vercel.app/" />
+    <link rel="alternate" hreflang="ja" href="https://aurelvoid.vercel.app/" />
+    <link rel="alternate" hreflang="en" href="https://aurelvoid.vercel.app/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://aurelvoid.vercel.app/" />
+
+    <!-- ───────── Open Graph (Facebook / LinkedIn / Slack etc.) ───────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Aurelvoid" />
+    <meta property="og:title" content="Aurelvoid — ジェネレーティブマンダラを漂流するアートラボ" />
+    <meta
+      property="og:description"
+      content="7 つの数理エンジンと 16 のカラーパレットから、瞑想的なマンダラを生成・探索する Web アートツール。"
+    />
+    <meta property="og:url" content="https://aurelvoid.vercel.app/" />
+    <meta property="og:image" content="https://aurelvoid.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Aurelvoid — generative mandala laboratory" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- ───────── Twitter Card ───────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Aurelvoid — ジェネレーティブマンダラを漂流するアートラボ" />
+    <meta
+      name="twitter:description"
+      content="7 つの数理エンジンと 16 のカラーパレットから、瞑想的なマンダラを生成・探索する Web アートツール。"
+    />
+    <meta name="twitter:image" content="https://aurelvoid.vercel.app/og.png" />
+    <meta name="twitter:image:alt" content="Aurelvoid — generative mandala laboratory" />
+
+    <!-- ───────── Favicon (SVG inline so we don't ship a binary asset) ───────── -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><radialGradient id='g' cx='50%25' cy='50%25' r='50%25'><stop offset='0%25' stop-color='%23f3d3ff'/><stop offset='55%25' stop-color='%23b89cff'/><stop offset='100%25' stop-color='%2307060c'/></radialGradient></defs><rect width='64' height='64' fill='%2307060c'/><circle cx='32' cy='32' r='22' fill='url(%23g)'/><g stroke='%23ffffff' stroke-width='1' stroke-linecap='round' fill='none' opacity='0.55'><path d='M32 10 L32 54 M10 32 L54 32 M16 16 L48 48 M48 16 L16 48'/></g></svg>"
+    />
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><radialGradient id='g' cx='50%25' cy='50%25' r='50%25'><stop offset='0%25' stop-color='%23f3d3ff'/><stop offset='55%25' stop-color='%23b89cff'/><stop offset='100%25' stop-color='%2307060c'/></radialGradient></defs><rect width='64' height='64' fill='%2307060c'/><circle cx='32' cy='32' r='26' fill='url(%23g)'/></svg>" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- ───────── JSON-LD structured data ───────── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Aurelvoid",
+        "alternateName": "Aurelvoid — Generative Mandala Laboratory",
+        "url": "https://aurelvoid.vercel.app/",
+        "applicationCategory": "DesignApplication",
+        "applicationSubCategory": "Generative Art",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires a modern browser with Canvas 2D support",
+        "description": "Aurelvoid is a meditative generative-mandala laboratory. Seven mathematical engines and sixteen colour palettes produce ever-shifting kaleidoscopic art in the browser.",
+        "inLanguage": ["ja", "en"],
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "JPY"
+        }
+      }
+    </script>
 
     <!-- Google Fonts — pinned so every visitor sees the same typography.
          Inter covers Latin UI text (close to SF Pro / system stack we had
@@ -20,8 +98,6 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-
-    <title>Generative Mandala Laboratory</title>
     <style>
       html, body, #root {
         margin: 0;
