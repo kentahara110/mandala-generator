@@ -194,11 +194,35 @@ html, body, #root {
 }
 .app.immersive {
   grid-template-columns: 1fr;
+  /* Match the canvas's own background colour so the letterboxing around
+     the (square) canvas is seamless — the whole viewport reads as one
+     uniform dark field. */
+  background: #07060c;
 }
 .app.immersive .canvas-wrap {
   padding: 0;
   width: 100vw;
   height: 100vh;
+  background: #07060c;
+}
+
+/* When ANY element goes into the browser's real Fullscreen mode, force the
+   page chrome to the canvas colour too. `:fullscreen` targets the element
+   itself; `::backdrop` is the layer the browser paints behind it. */
+:fullscreen {
+  background: #07060c;
+}
+:-webkit-full-screen {
+  background: #07060c;
+}
+::backdrop,
+:fullscreen::backdrop,
+:-webkit-full-screen::backdrop {
+  background: #07060c;
+}
+html:fullscreen,
+html:-webkit-full-screen {
+  background: #07060c;
 }
 .app.immersive .immersive-toggle {
   /* keep the exit toggle visible but make it a bit translucent so it
@@ -647,7 +671,7 @@ canvas.mandala {
     transition: transform 0.28s ease;
     background: rgba(14, 10, 24, 0.94);
     border-left: 1px solid var(--panel-border);
-    padding: 56px 14px 80px;
+    padding: 56px 14px 100px;
     overflow-y: auto;
     overscroll-behavior: contain;
   }

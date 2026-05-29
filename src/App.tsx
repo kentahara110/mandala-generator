@@ -52,59 +52,64 @@ export const App: React.FC = () => {
   }, [immersive, drawerOpen])
 
   const toggleImmersive = useCallback(() => {
-    // Compute next state from the latest ref-style snapshot via state callback
-    // so we don't need `immersive` in this callback's dep array.
-    setImmersive((current) => {
-      const next = !current
-      // Best-effort browser fullscreen so mobile browsers hide their chrome
-      // (URL bar, navigation buttons) — same UX as YouTube fullscreen.
-      // Vendor-prefixed fallback supports older Safari (< iOS 16.4) where
-      // standard requestFullscreen on a non-video element isn't available.
-      try {
-        const el = document.documentElement as HTMLElement & {
-          webkitRequestFullscreen?: () => Promise<void>
-          webkitRequestFullScreen?: () => void
-          mozRequestFullScreen?: () => Promise<void>
-          msRequestFullscreen?: () => Promise<void>
-        }
-        const doc = document as Document & {
-          webkitFullscreenElement?: Element | null
-          webkitExitFullscreen?: () => Promise<void>
-          webkitCancelFullScreen?: () => void
-          mozCancelFullScreen?: () => Promise<void>
-          msExitFullscreen?: () => Promise<void>
-        }
-        const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
-        if (next && !inFs) {
-          const req =
-            el.requestFullscreen ||
-            el.webkitRequestFullscreen ||
-            el.webkitRequestFullScreen ||
-            el.mozRequestFullScreen ||
-            el.msRequestFullscreen
-          const result = req?.call(el)
-          if (result && typeof (result as Promise<void>).catch === 'function') {
-            ;(result as Promise<void>).catch(() => {})
-          }
-        } else if (!next && inFs) {
-          const exit =
-            doc.exitFullscreen ||
-            doc.webkitExitFullscreen ||
-            doc.webkitCancelFullScreen ||
-            doc.mozCancelFullScreen ||
-            doc.msExitFullscreen
-          const result = exit?.call(doc)
-          if (result && typeof (result as Promise<void>).catch === 'function') {
-            ;(result as Promise<void>).catch(() => {})
-          }
-        }
-      } catch {
-        // ignore — immersive still works in-page even if the FS API rejects.
+    const goingIn = !immersive
+    // IMPORTANT: call the Fullscreen API SYNCHRONOUSLY here, directly inside
+    // the click handler's call stack. Browsers (especially mobile Safari)
+    // gate `requestFullscreen` to "user-activated" tasks; wrapping it in a
+    // setState callback breaks that and the request is silently ignored.
+    try {
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>
+        webkitRequestFullScreen?: () => void
+        mozRequestFullScreen?: () => Promise<void>
+        msRequestFullscreen?: () => Promise<void>
       }
-      return next
-    })
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element | null
+        webkitExitFullscreen?: () => Promise<void>
+        webkitCancelFullScreen?: () => void
+        mozCancelFullScreen?: () => Promise<void>
+        msExitFullscreen?: () => Promise<void>
+      }
+      const inFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement)
+      if (goingIn && !inFs) {
+        const req =
+          el.requestFullscreen ||
+          el.webkitRequestFullscreen ||
+          el.webkitRequestFullScreen ||
+          el.mozRequestFullScreen ||
+          el.msRequestFullscreen
+        const result = req?.call(el)
+        if (result && typeof (result as Promise<void>).catch === 'function') {
+          ;(result as Promise<void>).catch(() => {})
+        }
+      } else if (!goingIn && inFs) {
+        const exit =
+          doc.exitFullscreen ||
+          doc.webkitExitFullscreen ||
+          doc.webkitCancelFullScreen ||
+          doc.mozCancelFullScreen ||
+          doc.msExitFullscreen
+        const result = exit?.call(doc)
+        if (result && typeof (result as Promise<void>).catch === 'function') {
+          ;(result as Promise<void>).catch(() => {})
+        }
+      }
+    } catch {
+      // ignore — immersive still works in-page even if the FS API rejects.
+    }
+    // Mobile-Safari URL-bar hiding fallback: the browser only hides chrome
+    // when there's room to scroll. After entering immersive we nudge a tiny
+    // scroll on the next tick so iOS collapses the URL bar even when the
+    // Fullscreen API silently rejected the request.
+    if (goingIn) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 1)
+      })
+    }
+    setImmersive(goingIn)
     setDrawerOpen(false)
-  }, [])
+  }, [immersive])
 
   // Keep our `immersive` state in sync if the user exits browser fullscreen
   // via a system gesture (Escape, swipe down, or the browser's own UI).
