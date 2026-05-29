@@ -724,7 +724,7 @@ canvas.mandala {
     right: 14px;
   }
   .immersive-toggle {
-    bottom: 14px;
+    bottom: 3%;
     right: 14px;
   }
   /* Drawer-container is now the single scrollable drawer that contains
