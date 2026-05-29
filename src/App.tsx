@@ -634,6 +634,9 @@ export const App: React.FC = () => {
             {t.shuffleHelp}
           </div>
         </div>
+
+        {/* Subtle copyright line at the very bottom of the menu. */}
+        <div className="copyright">AURELVOID © 2026</div>
       </div>
 
       </div>{/* /.drawer-container */}
