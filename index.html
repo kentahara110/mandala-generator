@@ -38,12 +38,18 @@
       content="7 つの数理エンジンと 16 のカラーパレットから、瞑想的なマンダラを生成・探索する Web アートツール。"
     />
     <meta property="og:url" content="https://aurelvoid.vercel.app/" />
-    <meta property="og:image" content="https://aurelvoid.vercel.app/og.png" />
+    <!-- Bump the `?v=` whenever the OG image is replaced — it forces
+         crawlers (FB / X / LINE / Slack / Discord …) to treat it as a
+         brand-new URL and refetch instead of serving their cached copy. -->
+    <meta property="og:image" content="https://aurelvoid.vercel.app/og.png?v=2" />
+    <meta property="og:image:secure_url" content="https://aurelvoid.vercel.app/og.png?v=2" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Aurelvoid — generative mandala laboratory" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:updated_time" content="2026-05-29T00:00:00+09:00" />
 
     <!-- ───────── Twitter Card ───────── -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -52,7 +58,7 @@
       name="twitter:description"
       content="7 つの数理エンジンと 16 のカラーパレットから、瞑想的なマンダラを生成・探索する Web アートツール。"
     />
-    <meta name="twitter:image" content="https://aurelvoid.vercel.app/og.png" />
+    <meta name="twitter:image" content="https://aurelvoid.vercel.app/og.png?v=2" />
     <meta name="twitter:image:alt" content="Aurelvoid — generative mandala laboratory" />
 
     <!-- ───────── Favicon (SVG inline so we don't ship a binary asset) ───────── -->
